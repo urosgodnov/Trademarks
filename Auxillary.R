@@ -94,7 +94,7 @@ downloadData <- function(Country,
       
     }
     
-    if (exists("scrapData") && scrapData$`Application no.`==appNumber) {
+    if (exists("scrapData")) {
       #Saving into tempData
       
       
