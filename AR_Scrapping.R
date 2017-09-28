@@ -69,7 +69,8 @@ getNamesPattern <- function(text, pattern) {
 }
 
 ARScrap <- function(AppNo) {
-  #AppNo <-1845278
+  #AppNo <-1963277
+
   
   #Making URL and Reading data
   
@@ -88,7 +89,7 @@ ARScrap <- function(AppNo) {
   
   if (class(data) != "try-error")
   {
-    
+    AppNoUpon<-NA
     #going through loops to find newer appno if any
     for (i in 1:5) {
       AppNoNew <-
@@ -98,12 +99,12 @@ ARScrap <- function(AppNo) {
       AppNoNew <- try(as.numeric(gsub("\\D+", "", AppNoNew)))
       
       if (!is.na(AppNoNew)) {
-        AppNo <- AppNoNew
+        AppNoUpon <- AppNoNew
         
         url <-
           paste(
             "https://portaltramites.inpi.gob.ar/Clasico/Docs/ResultadosConsultas/ResultadoSolicitudMarca2.asp?Va=",
-            AppNo,
+            AppNoUpon,
             sep = ""
           )
         
@@ -490,6 +491,7 @@ ARScrap <- function(AppNo) {
         LimDis,
         owner,
         ownerAddr,
+        AppNoUpon,
         stringsAsFactors = FALSE
       ),
       tmpDF
@@ -507,6 +509,7 @@ ARScrap <- function(AppNo) {
       `Priority country` = priorityCountry,
       `Publication date` = publication,
       `Publication no.` = publicationNo,
+      `Application no. assigned upon renewal`=AppNoUpon,
       `TM Type` = kind,
       Status = status,
       `Limitations & Disclaimers` = LimDis,

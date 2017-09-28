@@ -101,7 +101,7 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
   }
   
   #here i put app no. Watch what is unique
-  RegNumList<-as.list(unique(gsub("\\.","",allData$`Application no.`)))
+  RegNumList<-as.list(unique(gsub("\\.","",allData$`Application no.`[allData$sourceType=='verification'])))
   #Adding logos
   for (i in 1:length(RegNumList)) {
     
@@ -133,7 +133,7 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 
 joinAndCompare<-function(verificationFile,destinationFile, Country){
    # # 
-   #   path<-"./Inputdata/testArgentina.xlsx"
+   #   path<-"./Inputdata/ArgentinaBrand.xlsx"
    #  # #  # #
    #  # # ##destinationFile<-read_excel(path=path, skip=1)
    #  # # # #
@@ -153,10 +153,10 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
    # destinationFile<-source
    #  # # #
    # path<-"./data/Argentina_online.xlsx"
-  
-
-    #verificationFile<-as.data.frame(read_excel(path=path))
-    #names(verificationFile)<-tolower(names(verificationFile))
+   # 
+   # 
+   #  verificationFile<-as.data.frame(read_excel(path=path))
+   #  #names(verificationFile)<-tolower(names(verificationFile))
   
 
   
@@ -278,7 +278,8 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     #Alldata application number to string as errors have app number with this type
     allData$`Application no.`<-as.character(allData$`Application no.`)
     
-
+    #Due to possible appno change, I have to overwrite some of the appno
+    allData$`Application no.`[!is.na(allData$`Application no. assigned upon renewal`)]<-as.character(allData$`Application no. assigned upon renewal`[!is.na(allData$`Application no. assigned upon renewal`)])
     
     if (nrow(error)>0) {
     allData<-union_all(allData,error) 
