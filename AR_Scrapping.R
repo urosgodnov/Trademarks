@@ -69,7 +69,7 @@ getNamesPattern <- function(text, pattern) {
 }
 
 ARScrap <- function(AppNo) {
-  #AppNo <-764566
+  #AppNo <-1845278
   
   #Making URL and Reading data
   
@@ -88,6 +88,39 @@ ARScrap <- function(AppNo) {
   
   if (class(data) != "try-error")
   {
+    
+    #going through loops to find newer appno if any
+    for (i in 1:5) {
+      AppNoNew <-
+        data %>% html_node(xpath = "//tr//div[contains(.,'Direccion de Marcas')]/following::tr[4]//td[text()='Renovada por']/following::td[1]") %>%
+        html_text()
+      
+      AppNoNew <- try(as.numeric(gsub("\\D+", "", AppNoNew)))
+      
+      if (!is.na(AppNoNew)) {
+        AppNo <- AppNoNew
+        
+        url <-
+          paste(
+            "https://portaltramites.inpi.gob.ar/Clasico/Docs/ResultadosConsultas/ResultadoSolicitudMarca2.asp?Va=",
+            AppNo,
+            sep = ""
+          )
+        
+        data <-
+          try(url %>% read_html(encoding = "utf-8"), silent = TRUE)
+        
+      } else {
+        break
+      }
+      
+    }
+    
+    
+
+    
+    
+    
     application <-
       data %>% html_node(xpath = "//tr//div[contains(.,'Presentaci')]") %>%
       html_text()
