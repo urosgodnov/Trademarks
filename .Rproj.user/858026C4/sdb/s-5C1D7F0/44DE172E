@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "#loading sources\nsource(\"Auxillary.R\")\nsource(\"Brandstock.R\")\nsource(\"AUS_Scrapping.R\")\nsource(\"US_Scrapping.R\")\nsource(\"AR_Scrapping.R\")\n\n##Creating subfolders\n#Storing logos\ndir.create(file.path(\"logos\"), showWarnings = FALSE)\n\n#Storing tmp data - after every download, I save it\ndir.create(file.path(\"tmpData\"), showWarnings = FALSE)\n\n#Storing data\ndir.create(file.path(\"data\"), showWarnings = FALSE)\n\n#VerificationResults\ndir.create(file.path(\"VerificationResults\"), showWarnings = FALSE)\n\nexecute<-function(country,what, verificationFileP, sourceFileP)\n{\n  \n  if (country==\"Australia\") {\n    \n   localTime<-Sys.getlocale(\"LC_TIME\")\n   \n   #local time to Australiaan\n   Sys.setlocale(\"LC_TIME\", \"English\") \n  \n  \n  }\n   \n   source<-readingSource(country,verificationFileP)\n   \n   \n   if (what==\"only compare\") {\n\n       verificationFile<-as.data.frame(read_excel(path=sourceFileP))\n   \n     }\n    else {\n          insert(outputConsole,\"Downloading started....\")\n          downloadData(country,source)\n          path<-paste(\"./data/\",country,\"_online.xlsx\",sep=\"\")\n          verificationFile<-as.data.frame(read_excel(path=path)) }\n \n\n    insert(outputConsole,\"Joing and comparing started...\")\n    joinAndCompare(verificationFile,source,country)\n  \n\n  \n    #restore locale\n    Sys.setlocale(\"LC_TIME\", localTime) \n  \n  \n  \n}",
+    "created" : 1506424979975.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3247745321",
+    "id" : "44DE172E",
+    "lastKnownWriteTime" : 1506413487,
+    "last_content_update" : 1506413487,
+    "path" : "C:/Users/Godnov/Dropbox/Katarina/Main.R",
+    "project_path" : "Main.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

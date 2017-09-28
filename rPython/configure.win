@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo 'PKG_LIBS=-LC:/Users/Godnov/Anaconda3/libs -lpython36'  > src/makevars.win
+echo 'PKG_CFLAGS=-I"C:/Users/Godnov/Anaconda3/include"'     >> src/makevars.win
+

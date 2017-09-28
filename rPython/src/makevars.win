@@ -1,0 +1,2 @@
+PKG_LIBS=-LC:/Users/Godnov/Anaconda3/libs -lpython36
+PKG_CFLAGS=-I"C:/Users/Godnov/Anaconda3/include"
