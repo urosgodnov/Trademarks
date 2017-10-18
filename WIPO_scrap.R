@@ -68,7 +68,30 @@ NoImport<-as.data.frame(filter(dataWipo,`APPLICATION NO`!=`REGISTRATION NO`)%>%s
 colnames(NoImport)<-"RegNo"
 
 
-noImport<-rbind(not,NoImport)
+#noImport<-rbind(not,NoImport)
+write.xlsx(not, file="NotFoundInRoarin.xlsx")
+write.xlsx(NoImport, file="ProblemWithAppNo.xlsx")
 
-write.xlsx(noImport,file="NoWipoDowload.xlsx")
+#write.xlsx(noImport,file="NoWipoDowload.xlsx")
 write.xlsx(yes,file="WipoDowloaded.xlsx")
+
+
+#######Unzip files
+fileson <- list.files(path = "./WipoZips/",
+                      pattern = "*.zip",
+                      full.names = FALSE)
+
+lapply(fileson, function(x) {
+  
+  x<-paste("./WipoZips/",x,sep="")
+  
+  if (file.exists(x))
+  {   
+    print(x)
+    unzip(zipfile=x,exdir = "./WipoZips")
+  }
+})
+
+
+
+
