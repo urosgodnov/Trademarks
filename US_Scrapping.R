@@ -208,7 +208,8 @@ USScrap <- function(AppNo) {
   AppNo<-gsub("/","",AppNo)
   AppNo<-gsub("-","",AppNo, fixed=TRUE)
   
-  try(rm("tmpDF"), silent = TRUE)
+  try(rm("tmpDF"), silent = TRUE) 
+  try(rm("dataOwner"), silent = TRUE)
   
   if (!grepl('^[0-9]+$', AppNo)) {
     
