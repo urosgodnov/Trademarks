@@ -199,7 +199,7 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-73063477
+  #AppNo <-77090417
 
   #Making URL and Reading data
   
@@ -210,6 +210,7 @@ USScrap <- function(AppNo) {
   
   try(rm("tmpDF"), silent = TRUE) 
   try(rm("dataOwner"), silent = TRUE)
+  try(rm("statusURL"), silent = TRUE)
   
   if (!grepl('^[0-9]+$', AppNo)) {
     
