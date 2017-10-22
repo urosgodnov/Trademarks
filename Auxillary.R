@@ -71,6 +71,7 @@ downloadData <- function(Country,
     appNumber <- appNo[[i]]
     appNumber <- gsub(",", "", appNumber)
     appNumber <- gsub("/", "", appNumber)
+    appNumber <- gsub("-", "", appNumber)
     appNumber <- gsub(".", "", appNumber, fixed = TRUE)
     
     cat(paste("Downloading Trademark ", appNumber, "...\n", sep = ""))

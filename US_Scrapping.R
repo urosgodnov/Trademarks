@@ -1,8 +1,76 @@
+GetOwner<-function(dataOwner) {
+  
+  
+  assignements <- dataOwner %>%
+    html_nodes(xpath = "//div[@class='assignmentsContainer persist-area' and (@data-assign-type='Ownership and Name Change' or @data-assign-type='Others')]/@id")%>%
+    html_text()
+  
+  assignementsStatus <- dataOwner %>%
+    html_nodes(xpath = "//div[@class='assignmentsContainer persist-area' and (@data-assign-type='Ownership and Name Change' or @data-assign-type='Others')]/@data-assign-type")%>%
+    html_text()
+  
+  assignementsL<-as.list(gsub(".*-([0-9]+).*", "\\1", assignements))
+  
+  for (i in length(assignementsL):1) {
+    
+   
+    #Command
+    x<-paste("//div[@id='assignments-",assignementsL[[i]],"']//div[@class='value']",sep="")
+    
+    name<-paste("//div[@id='assignments-",assignementsL[[i]],"']//div[contains(text(),'Assignee')]/following::div[1]",sep="")
+    
+    address<-paste("//div[@id='assignments-",assignementsL[[i]],"']//div[contains(text(),'Address')]/following::div[1]",sep="")
+
+    
+    Conveyance<-dataOwner %>% 
+    html_nodes(xpath = x) %>% html_text()
+    
+    Conveyance<-Conveyance[1]
+    
+    if ("Legal" %in% Conveyance && assignementsStatus[[i]]=='Others' || assignementsStatus[[i]]=='Ownership and Name Change') {
+      
+      
+    OwnerName<-dataOwner %>% 
+        html_nodes(xpath = name) %>% html_text()
+      
+
+    
+    OwnerName<-gsub("\r","",OwnerName)
+    OwnerName<-gsub("\n","",OwnerName)
+    OwnerName<-gsub("Name:","",OwnerName)  
+    OwnerName<-trimws(OwnerName)
+    
+    OwnerAddr<-dataOwner %>% 
+      html_node(xpath = address) %>% html_text()
+  
+    OwnerAddr<-gsub("\r","",OwnerAddr)
+    
+
+    break
+    
+    }
+    
+    
+    
+
+    
+  }
+  
+ 
+  
+  return(data.frame(OwnerName,OwnerAddr, stringsAsFactors = FALSE))
+  
+  
+}
+
+
+
+
 USRenewal <- function(url) {
   x <- data %>%
     html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']") %>% html_text()
   
-  if (length(x) > 0) {
+  if (length(x) > 0 ) {
     remDr$navigate(url)
     
     Sys.sleep(1)
@@ -16,6 +84,10 @@ USRenewal <- function(url) {
     
     renewal <- t %>%
       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'§9') and contains(text(),'without')]/following::div[1]") %>%
+      html_text()
+    
+    DAU<-t %>%
+      html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'§8 & 9') and contains(text(),'without')]/following::div[1]") %>%
       html_text()
     
     
@@ -39,9 +111,16 @@ USRenewal <- function(url) {
     
     
     renewal <- format(renewal, "%d.%m.%Y")
+    
+    DAU <- as.Date(DAU, "%B. %d, %Y")
+    
+    
+    DAU <- format(DAU, "%d.%m.%Y")
+    
   } else {
     renewal <- NA
     commentAll<-NA
+    DAU<-NA
   }
   
   if (length(renewal) == 0 || is.na(renewal)) {
@@ -49,7 +128,11 @@ USRenewal <- function(url) {
     renewal <- format(as.Date("1800-01-01", "%Y-%m-%d"), "%d.%m.%Y")
   }
   
-  return(data.frame(renewal,commentAll, stringsAsFactors=FALSE))
+  if (length(DAU) == 0 || is.na(DAU)) {
+    #when rbind I want dates to stay dates
+    DAU <- format(as.Date("1800-01-01", "%Y-%m-%d"), "%d.%m.%Y")
+  }
+  return(data.frame(renewal,commentAll,DAU, stringsAsFactors=FALSE))
   
 }  
   
@@ -116,12 +199,13 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-77101453
+  #AppNo <-85853329
 
   #Making URL and Reading data
   
   AppNo<-gsub(",","",AppNo)
   AppNo<-gsub("/","",AppNo)
+  AppNo<-gsub("-","",AppNo, fixed=TRUE)
   
   url <-
     paste(
@@ -134,8 +218,11 @@ USScrap <- function(AppNo) {
   statusURL<-paste("http://tsdr.uspto.gov/statusview/sn",AppNo,sep="")
 
   
-  data <- statusURL %>% read_html()
   
+  
+  try(data <- statusURL %>% read_html(), silent=TRUE)
+  
+
   application <-
     as.Date(
       gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Application Filing Date:']/following::div[1]") %>% html_text()),
@@ -238,19 +325,22 @@ USScrap <- function(AppNo) {
 
   FirstUseDate<-min(FirstUseDate)
   
-  owner<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Owner Name:']/following::div[1]") %>% html_text())
+  #TM Type
+  kind<- gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Mark Drawing Type:']/following::div[1]") %>% html_text())
+
+  kind<-gsub(".*([0-9]+).*$", "\\1", kind)
   
-  if (length(owner)==0) {
-    
-    owner<-NA
-  }
+  kind<-ifelse(kind %in% c("1","2","3","4","5"),kind,"")
   
-  ownerAddr<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Owner Address:']/following::div[1]") %>% html_text())
   
-  if (length(ownerAddr)==0) {
-    
-    ownerAddr<-NA
-  }
+  kind<-switch(as.numeric(kind),"WORD","DEVICE","WORD-DEVICE","WORD","WORD-DEVICE")
+
+  
+  AppType<- try(gsub("\r\n","",data %>% html_nodes(xpath = "//span[contains(@data-sectiontitle,'International Registration')]/following::div[1]") %>% html_text()), silent=TRUE)
+
+  AppType<-ifelse(length(AppType)>0,"International","National")
+  
+
   
   agentOnRecord<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Attorney Name:']/following::div[1]") %>% html_text())
   
@@ -308,10 +398,43 @@ USScrap <- function(AppNo) {
   }
   
 
-
-
-    
+  #Color
+  color<- gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Color(s) Claimed:']/following::div[1]") %>% html_text())
   
+  if (length(color)>0) {
+  color<-ifelse("not" %in%color ,"Black and white,","Color")
+  } else {color<-NA}
+  
+  #Owner na ta zajeban način
+  #I have to call this tab
+  urlA<-paste("http://tsdr.uspto.gov/assignments/",AppNo,"?searchprefix=sn",sep="")
+  
+  try(dataOwner <- urlA %>% read_html(), silent=TRUE)
+  
+  if ( !exists("dataOwner")) {
+  
+  owner<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Owner Name:']/following::div[1]") %>% html_text())
+  
+  if (length(owner)==0) {
+    
+    owner<-NA
+  }
+  
+  ownerAddr<-gsub("\r","",data %>% html_nodes(xpath = "//div[text()='Owner Address:']/following::div[1]") %>% html_text())
+  
+
+  
+  if (length(ownerAddr)==0) {
+    
+    ownerAddr<-NA
+  }
+  } else
+  {
+    owner1<-GetOwner(dataOwner)
+    
+    ownerAddr<-owner1$OwnerAddr
+    owner<-trimws(gsub("Name:","",owner1$OwnerName))
+  }
   
   renewalAll <-USRenewal(url)
   
@@ -319,70 +442,19 @@ USScrap <- function(AppNo) {
   
   renewal<-renewalAll$renewal
   
+  DAU<-renewalAll$DAU
+  
   LimDis<-comments
 
   status<-NA
   
-  kind<-NA
+
   
   words<-NA
   
   image<-NA
 
 
-  # 
-  # 
-  # 
-  # status <-
-  #   gsub(
-  #     "\n",
-  #     "",
-  #     data %>% html_nodes(xpath = "//tr[td/text()='Status']/td[2]") %>% html_text()
-  #   )
-  # 
-  # kind <-
-  #   gsub(
-  #     "\n",
-  #     "",
-  #     data %>% html_nodes(xpath = "//tr[td/text()='Kind']/td[2]") %>% html_text()
-  #   )
-  # 
-  # #words
-  # words <-
-  #   gsub(
-  #     "\n",
-  #     "",
-  #     data %>% html_nodes(xpath = "//div[h5/text()='Indexing constituents']//span[text()='Word']/following::table[1]//td") %>%
-  #       html_text()
-  #   )
-  # words <- paste(words, collapse = ",")
-  # 
-  # #Image
-  # image <-
-  #   gsub(
-  #     "\n",
-  #     "",
-  #     data %>% html_nodes(xpath = "//div[h5/text()='Indexing constituents']//span[text()='Image']/following::table[1]//td") %>%
-  #       html_text()
-  #   )
-  # image <- paste(image, collapse = ",")
-  # 
-  # #Limitations & Disclamiers
-  # LimDis <-
-  #   gsub(
-  #     "\n",
-  #     "",
-  #     data %>% html_nodes(xpath = "//div[h5/text()='Endorsements']/p") %>% html_text()
-  #   )
-  # if  (length(LimDis)==0){
-  #   
-  #   LimDis<-NA
-  # }
-  # 
-  
-
-  
-   
   #return DF
   tmpDF <- cbind(
     data.frame(
@@ -401,6 +473,9 @@ USScrap <- function(AppNo) {
       associatedTMs,
       status,
       kind,
+      AppType,
+      DAU,
+      color,
       words,
       image,
       imageUrl,
@@ -425,7 +500,10 @@ USScrap <- function(AppNo) {
     `Notice of allowance date`=NoticeOfAllowanceDate,
     `Publication date`=publication,
     `TM Type`=kind,
-    Status=status,
+    `Application type`=AppType,
+    `Next DAU date`=DAU,
+    `Is color`=color,
+     Status=status,
     `Limitations & Disclaimers`=LimDis,
     `Agent on record`=agentOnRecord,
     Owner=owner,

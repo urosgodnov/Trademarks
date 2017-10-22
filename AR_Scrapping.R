@@ -117,11 +117,7 @@ ARScrap <- function(AppNo) {
       
     }
     
-    
-
-    
-    
-    
+  
     application <-
       data %>% html_node(xpath = "//tr//div[contains(.,'Presentaci')]") %>%
       html_text()
