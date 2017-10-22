@@ -92,10 +92,9 @@ downloadData <- function(Country,
     {
       try(scrapData <- ARScrap(appNumber), silent = FALSE)
       
-      
     }
     
-    if (exists("scrapData")) {
+    if (exists("scrapData") && nrow(scrapData)=1) {
       #Saving into tempData
       
       
@@ -139,7 +138,8 @@ downloadData <- function(Country,
     if (file.exists(filenm))
     {
         load(filenm)
-         return(scrapData)
+        if (class(scrapData)=="data.frame") {
+        return(scrapData) }
     }
   })
   
@@ -149,11 +149,19 @@ downloadData <- function(Country,
   #local time to Australiaan
   Sys.setlocale("LC_TIME", "German")
 
-  dataTmp = as.data.frame(try(do.call(rbind, data_s)))
+  dataTmp = as.data.frame(try(do.call(rbind.fill, data_s)))
   
   
   #removing dummy dates
   dataTmp[dataTmp  ==  "01.01.1800"]  <-  NA
+  
+  #Removing empty Appno
+  dataTmp<-dataTmp[!is.na(dataTmp$`Application no.`),]
+  dataTmp<-dataTmp[dataTmp$`Application no.`!="000000",]
+  
+  dataTmp<-dataTmp[!duplicated(dataTmp),]
+
+
   
   
   #changing format
@@ -175,5 +183,5 @@ downloadData <- function(Country,
     parent = w
   )
   
-  
+  rm(list = ls())
 }

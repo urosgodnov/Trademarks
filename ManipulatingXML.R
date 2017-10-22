@@ -107,6 +107,15 @@ for (i in 2:xmlSize(rootNode)) {
 }
 
 AllNodesDF<-do.call(rbind.fill, results0)
+#changing datatype
+colNames <- c('INTREGD','EXPDATE')
+
+dffront[colNames] <- lapply( dffront[colNames], as.Date, "%Y%m%d" )
+
+colNames <- c("REGRDAT","NOTDATE","REGEDAT","PUBDATE")
+
+AllNodesDF[colNames] <- lapply( AllNodesDF[colNames], as.Date, "%Y%m%d" )
+
 return(list(dffront,AllNodesDF))
 
 }

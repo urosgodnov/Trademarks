@@ -132,8 +132,8 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 }
 
 joinAndCompare<-function(verificationFile,destinationFile, Country){
-   # # 
-   #   path<-"./Inputdata/ArgentinaBrand.xlsx"
+   #
+   #   path<-"./Inputdata/USA.xlsx"
    #  # #  # #
    #  # # ##destinationFile<-read_excel(path=path, skip=1)
    #  # # # #
@@ -149,15 +149,17 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
    #    source$Record_ID<-gsub("Record ID:","",source$Record_ID)
    #  # # #
    #     source<-source%>%filter(!grepl("Record",Trademark))
+   # 
+   #     source$`Application no.` <- gsub("/", "", source$`Application no.`)
+   #     source$`Application no.` <- gsub(",", "", source$`Application no.`)
    #  # # #
    # destinationFile<-source
    #  # # #
-   # path<-"./data/Argentina_online.xlsx"
+   # path<-"./data/USA_online.xlsx"
    # 
-   # 
-   #  verificationFile<-as.data.frame(read_excel(path=path))
-   #  #names(verificationFile)<-tolower(names(verificationFile))
-  
+
+    verificationFile<-as.data.frame(read_excel(path=path))
+    #names(verificationFile)<-tolower(names(verificationFile))
 
   
     colnames<-names(destinationFile)
@@ -174,14 +176,30 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     
     verificationFile<-cbind(data.frame(sourceType=rep("verification",nrow(verificationFile))),verificationFile)
 
-    
+  
     #i will create column names with double__. Before exporting, I will switch back
-    colnames(verificationFile)<-gsub(" ","__",names(verificationFile))
+    namesV<-names(verificationFile)
+    colnames(verificationFile)<-gsub(" ","__",namesV)
     destinationRecordName<-unique(destinationFile[,c("Record_ID","Trademark","Application__no.")])
     
+
+    #I'll take the shorter version of Trademark name
+     destinationRecordName<-as.data.table(destinationRecordName[!is.na(destinationRecordName$Application__no.),])
+     
+     destinationRecordName<- destinationRecordName[destinationRecordName[, .I[Trademark == max(Trademark)], by=Application__no.]$V1]
+
+     destinationRecordName<-as.data.frame(destinationRecordName)
+     
+     
+      # destinationRec<-destinationRecordName%>%select(Record_ID,Application__no.)%>%
+      #   group_by(Record_ID,Application__no.)%>%dplyr::mutate(Number=n())%>%
+      #  select(Number,Record_ID,Application__no.)%>%filter(Number>1)    
     #getting record ID and Trademark
+     v1<-verificationFile
+     
+     verificationFile<-v1
     verificationFile<-inner_join(destinationRecordName,verificationFile, by="Application__no.",copy=TRUE)
-    
+    colnames(verificationFile)[2]<-c("Trademark")
     
     #creating same column structure in verification file
     tempVer <- verificationFile[intersect(names(destinationFile), names(verificationFile))]
@@ -192,6 +210,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     #same length
     verificationFile<-cbind.fill(tempVer,tempCol, stringAsFactor=FALSE)
     colnames(verificationFile)<-c(names(tempVer),names(tempCol))
+    
     
     
 

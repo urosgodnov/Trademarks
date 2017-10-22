@@ -13,7 +13,7 @@ GetOwner<-function(dataOwner) {
   
   for (i in length(assignementsL):1) {
     
-   
+    i=4
     #Command
     x<-paste("//div[@id='assignments-",assignementsL[[i]],"']//div[@class='value']",sep="")
     
@@ -27,11 +27,11 @@ GetOwner<-function(dataOwner) {
     
     Conveyance<-Conveyance[1]
     
-    if ("Legal" %in% Conveyance && assignementsStatus[[i]]=='Others' || assignementsStatus[[i]]=='Ownership and Name Change') {
+    if (grepl("Legal",Conveyance) && assignementsStatus[[i]]=='Others' || assignementsStatus[[i]]=='Ownership and Name Change') {
       
       
     OwnerName<-dataOwner %>% 
-        html_nodes(xpath = name) %>% html_text()
+        html_node(xpath = name) %>% html_text()
       
 
     
@@ -199,13 +199,22 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-85853329
+  #AppNo <-73063477
 
   #Making URL and Reading data
   
+ 
   AppNo<-gsub(",","",AppNo)
   AppNo<-gsub("/","",AppNo)
   AppNo<-gsub("-","",AppNo, fixed=TRUE)
+  
+  try(rm("tmpDF"), silent = TRUE)
+  
+  if (!grepl('^[0-9]+$', AppNo)) {
+    
+    tmpDF = as.data.frame(NULL)
+    return(tmpDF)
+  }
   
   url <-
     paste(
@@ -215,6 +224,7 @@ USScrap <- function(AppNo) {
       sep = ""
     )
   
+
   statusURL<-paste("http://tsdr.uspto.gov/statusview/sn",AppNo,sep="")
 
   
@@ -284,12 +294,15 @@ USScrap <- function(AppNo) {
   
   priorityNo<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Application Number:']/following::div[1]") %>% html_text())
   
+  priorityNo<-tail(priorityNo,1)
   if (length(priorityNo)==0) {
     
     priorityNo<-NA
   }
   
   priorityCountry<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Application/Registration Country:']/following::div[1]") %>% html_text())
+  
+  priorityCountry<-tail(priorityCountry,1)
   
   if (length(priorityCountry)==0) {
     
@@ -402,7 +415,7 @@ USScrap <- function(AppNo) {
   color<- gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Color(s) Claimed:']/following::div[1]") %>% html_text())
   
   if (length(color)>0) {
-  color<-ifelse("not" %in%color ,"Black and white,","Color")
+  color<-ifelse(grepl('not',color),"Black and white","Color")
   } else {color<-NA}
   
   #Owner na ta zajeban način
@@ -535,6 +548,7 @@ USScrap <- function(AppNo) {
     tmpDF = as.data.frame(NULL)
   }
 
+  rm(list=setdiff(ls(), "tmpDF"))
   
   return(tmpDF)
 }
