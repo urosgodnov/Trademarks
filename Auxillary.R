@@ -94,7 +94,7 @@ downloadData <- function(Country,
       
     }
     
-    if (exists("scrapData") && nrow(scrapData)=1) {
+    if (exists("scrapData") && nrow(scrapData)==1) {
       #Saving into tempData
       
       

@@ -1,5 +1,5 @@
 # load libraries
-packages=c("dplyr","XML","rvest","stringr","plyr","xml2","pryr","lubridate","readxl","xlsx",
+packages=c("dplyr","XML","rvest","stringr","plyr","xml2","pryr","lubridate","readxl","xlsx","data.table",
            "rowr","jpeg","png","RGtk2","RSelenium","gsubfn","rPython","magick","openssl","gWidgets2","utils")
 package.check <- lapply(packages, FUN = function(x) {
   if (!require(x, character.only = TRUE)) {
@@ -49,7 +49,7 @@ addSpring(bg)
 execute_btn <- gbutton("execute", cont=bg)
 
 
-cancel_btn <- gbutton("cancel", cont=bg, handler=function(...) dispose(w))
+cancel_btn <- gbutton("cancel", cont=bg, handler=function(...)  dispose(w))
 
 
 ## use a form layout for ease in laying out the controls to adjust the

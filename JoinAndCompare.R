@@ -156,9 +156,9 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
    # destinationFile<-source
    #  # # #
    # path<-"./data/USA_online.xlsx"
-   # 
 
-    verificationFile<-as.data.frame(read_excel(path=path))
+   #print(path)
+   # verificationFile<-as.data.frame(read_excel(path=path))
     #names(verificationFile)<-tolower(names(verificationFile))
 
   
