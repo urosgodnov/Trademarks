@@ -1,6 +1,6 @@
 GetOwner<-function(dataOwner) {
   
-  
+
   assignements <- dataOwner %>%
     html_nodes(xpath = "//div[@class='assignmentsContainer persist-area' and (@data-assign-type='Ownership and Name Change' or @data-assign-type='Others')]/@id")%>%
     html_text()
@@ -13,7 +13,7 @@ GetOwner<-function(dataOwner) {
   
   for (i in length(assignementsL):1) {
     
-    i=4
+  
     #Command
     x<-paste("//div[@id='assignments-",assignementsL[[i]],"']//div[@class='value']",sep="")
     
