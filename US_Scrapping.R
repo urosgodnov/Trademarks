@@ -67,7 +67,7 @@ GetOwner<-function(dataOwner) {
 
 
 USRenewal <- function(url) {
-  x <- data %>%
+  x <- url %>% read_html()%>%
     html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']") %>% html_text()
   
   if (length(x) > 0 ) {
@@ -199,10 +199,11 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-77090417
+  #AppNo <-78584468
 
   #Making URL and Reading data
-  
+  current<-Sys.getlocale("LC_TIME")
+  Sys.setlocale("LC_TIME","English") 
  
   AppNo<-gsub(",","",AppNo)
   AppNo<-gsub("/","",AppNo)
@@ -551,6 +552,8 @@ USScrap <- function(AppNo) {
   }
 
   rm(list=setdiff(ls(), "tmpDF"))
+  
+  Sys.setlocale("LC_TIME",current)
   
   return(tmpDF)
 }
