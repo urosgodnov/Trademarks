@@ -61,7 +61,7 @@ downloadData <- function(Country,
     #insert(outputConsole, "Starting Selenium server...")
     
     #driver <-
-     # try(rsDriver(verbose = FALSE, port = 4445L), silent = TRUE)
+    # try(rsDriver(verbose = FALSE, port = 4445L), silent = TRUE)
     #remDr <- try(driver[["client"]], silent = TRUE)
     
     #try(remDr$open(silent = TRUE), silent = TRUE)
@@ -137,8 +137,8 @@ downloadData <- function(Country,
     
     if (file.exists(filenm))
     {
-        load(filenm)
-        if (class(scrapData)=="data.frame") {
+      load(filenm)
+      if (class(scrapData)=="data.frame") {
         return(scrapData) }
     }
   })
@@ -148,7 +148,7 @@ downloadData <- function(Country,
   
   #local time to Australiaan
   Sys.setlocale("LC_TIME", "German")
-
+  
   dataTmp = as.data.frame(try(do.call(rbind.fill, data_s)))
   
   
@@ -160,8 +160,8 @@ downloadData <- function(Country,
   dataTmp<-dataTmp[dataTmp$`Application no.`!="000000",]
   
   dataTmp<-dataTmp[!duplicated(dataTmp),]
-
-
+  
+  
   
   
   #changing format

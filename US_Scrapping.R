@@ -458,11 +458,11 @@ USScrap <- function(AppNo) {
    
    LimDis<-gsub('"','',data %>% html_nodes(xpath = "//div[text()='Disclaimer:']/following::div[1]") %>% html_text())
   
-  if (length(LimDis)==0 && nchar(LimDis)>2) {
+  if (length(LimDis)==0) {
     
     LimDis<-NA
     
-  } else
+  } 
 
 
 
