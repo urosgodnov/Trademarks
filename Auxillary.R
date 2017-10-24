@@ -58,13 +58,13 @@ downloadData <- function(Country,
   
   if (Country == "USA")
   {
-    insert(outputConsole, "Starting Selenium server...")
+    #insert(outputConsole, "Starting Selenium server...")
     
-    driver <-
-      try(rsDriver(verbose = FALSE, port = 4445L), silent = TRUE)
-    remDr <- try(driver[["client"]], silent = TRUE)
+    #driver <-
+     # try(rsDriver(verbose = FALSE, port = 4445L), silent = TRUE)
+    #remDr <- try(driver[["client"]], silent = TRUE)
     
-    try(remDr$open(silent = TRUE), silent = TRUE)
+    #try(remDr$open(silent = TRUE), silent = TRUE)
   }
   
   for (i in 1:length(appNo)) {
@@ -117,8 +117,8 @@ downloadData <- function(Country,
   
   if (Country == "US")
   {
-    try(driver$server$stop(), silent = TRUE)
-    try(remDr$close(), silent = TRUE)
+    #try(driver$server$stop(), silent = TRUE)
+    #try(remDr$close(), silent = TRUE)
   }
   
   path <- paste("./tmpData/", Country, "/", sep = "")

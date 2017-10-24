@@ -133,7 +133,7 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 
 joinAndCompare<-function(verificationFile,destinationFile, Country){
    #
-   #   path<-"./Inputdata/USA.xlsx"
+   #   path<-"./Inputdata/USA_test3.xlsx"
    #  # #  # #
    #  # # ##destinationFile<-read_excel(path=path, skip=1)
    #  # # # #
@@ -157,7 +157,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
    #  # # #
    # path<-"./data/USA_online.xlsx"
 
-   #print(path)
+   # print(path)
    # verificationFile<-as.data.frame(read_excel(path=path))
     #names(verificationFile)<-tolower(names(verificationFile))
 

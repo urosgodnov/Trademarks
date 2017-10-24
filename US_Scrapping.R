@@ -44,7 +44,7 @@ GetOwner<-function(dataOwner) {
       html_node(xpath = address) %>% html_text()
   
     OwnerAddr<-gsub("\r","",OwnerAddr)
-    
+    OwnerAddr<-sub("\n","",OwnerAddr)    
 
     break
     
@@ -65,76 +65,76 @@ GetOwner<-function(dataOwner) {
 
 
 
-
-USRenewal <- function(url) {
-  x <- url %>% read_html()%>%
-    html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']") %>% html_text()
-  
-  if (length(x) > 0 ) {
-    remDr$navigate(url)
-    
-    Sys.sleep(1)
-    
-    try(MTab <-
-          remDr$findElement(using = "id", value = "maintenanceTabBtn"), silent = TRUE)
-    try(MTab$clickElement(), silent = TRUE)
-    
-    page_source <- remDr$getPageSource()
-    t <- read_html(page_source[[1]])
-    
-    renewal <- t %>%
-      html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'§9') and contains(text(),'without')]/following::div[1]") %>%
-      html_text()
-    
-    DAU<-t %>%
-      html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'§8 & 9') and contains(text(),'without')]/following::div[1]") %>%
-      html_text()
-    
-    
-    commentAll<-c("")
-    
-    comment<-t %>%
-      html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'Latest') and contains(text(),'§8') and not(contains(text(),'without'))]") %>%
-      html_text()
-    
-    commentAll<-c(commentAll,gsub("^\\s+|\\s+$","",comment))
-    
-    comment<-t %>%
-      html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'Latest') and contains(text(),'§8') and not(contains(text(),'without'))]/following::div[1]") %>%
-      html_text()
-    
-    commentAll<-c(commentAll,gsub("^\\s+|\\s+$","",comment))
-    
-    commentAll<-paste(commentAll, collapse = "")
-    
-    renewal <- as.Date(renewal, "%B. %d, %Y")
-    
-    
-    renewal <- format(renewal, "%d.%m.%Y")
-    
-    DAU <- as.Date(DAU, "%B. %d, %Y")
-    
-    
-    DAU <- format(DAU, "%d.%m.%Y")
-    
-  } else {
-    renewal <- NA
-    commentAll<-NA
-    DAU<-NA
-  }
-  
-  if (length(renewal) == 0 || is.na(renewal)) {
-    #when rbind I want dates to stay dates
-    renewal <- format(as.Date("1800-01-01", "%Y-%m-%d"), "%d.%m.%Y")
-  }
-  
-  if (length(DAU) == 0 || is.na(DAU)) {
-    #when rbind I want dates to stay dates
-    DAU <- format(as.Date("1800-01-01", "%Y-%m-%d"), "%d.%m.%Y")
-  }
-  return(data.frame(renewal,commentAll,DAU, stringsAsFactors=FALSE))
-  
-}  
+# 
+# USRenewal <- function(url) {
+#   x <- url %>% read_html()%>%
+#     html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']") %>% html_text()
+#   
+#   if (length(x) > 0 ) {
+#     remDr$navigate(url)
+#     
+#     Sys.sleep(1)
+#     
+#     try(MTab <-
+#           remDr$findElement(using = "id", value = "maintenanceTabBtn"), silent = TRUE)
+#     try(MTab$clickElement(), silent = TRUE)
+#     
+#     page_source <- remDr$getPageSource()
+#     t <- read_html(page_source[[1]])
+#     
+#     renewal <- t %>%
+#       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'§9') and contains(text(),'without')]/following::div[1]") %>%
+#       html_text()
+#     
+#     DAU<-t %>%
+#       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'§8 & 9') and contains(text(),'without')]/following::div[1]") %>%
+#       html_text()
+#     
+#     
+#     commentAll<-c("")
+#     
+#     comment<-t %>%
+#       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'Latest') and contains(text(),'§8') and not(contains(text(),'without'))]") %>%
+#       html_text()
+#     
+#     commentAll<-c(commentAll,gsub("^\\s+|\\s+$","",comment))
+#     
+#     comment<-t %>%
+#       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'Latest') and contains(text(),'§8') and not(contains(text(),'without'))]/following::div[1]") %>%
+#       html_text()
+#     
+#     commentAll<-c(commentAll,gsub("^\\s+|\\s+$","",comment))
+#     
+#     commentAll<-paste(commentAll, collapse = "")
+#     
+#     renewal <- as.Date(renewal, "%B. %d, %Y")
+#     
+#     
+#     renewal <- format(renewal, "%d.%m.%Y")
+#     
+#     DAU <- as.Date(DAU, "%B. %d, %Y")
+#     
+#     
+#     DAU <- format(DAU, "%d.%m.%Y")
+#     
+#   } else {
+#     renewal <- NA
+#     commentAll<-NA
+#     DAU<-NA
+#   }
+#   
+#   if (length(renewal) == 0 || is.na(renewal)) {
+#     #when rbind I want dates to stay dates
+#     renewal <- format(as.Date("1800-01-01", "%Y-%m-%d"), "%d.%m.%Y")
+#   }
+#   
+#   if (length(DAU) == 0 || is.na(DAU)) {
+#     #when rbind I want dates to stay dates
+#     DAU <- format(as.Date("1800-01-01", "%Y-%m-%d"), "%d.%m.%Y")
+#   }
+#   return(data.frame(renewal,commentAll,DAU, stringsAsFactors=FALSE))
+#   
+# }  
   
 
 
@@ -199,7 +199,7 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-78584468
+  #AppNo <-78295345
 
   #Making URL and Reading data
   current<-Sys.getlocale("LC_TIME")
@@ -438,6 +438,7 @@ USScrap <- function(AppNo) {
   
   ownerAddr<-gsub("\r","",data %>% html_nodes(xpath = "//div[text()='Owner Address:']/following::div[1]") %>% html_text())
   
+  ownerAddr<-sub("\n","",ownerAddr)
 
   
   if (length(ownerAddr)==0) {
@@ -452,19 +453,78 @@ USScrap <- function(AppNo) {
     owner<-trimws(gsub("Name:","",owner1$OwnerName))
   }
   
-  renewalAll <-USRenewal(url)
-  
-  comments<-renewalAll$commentAll
-  
-  renewal<-renewalAll$renewal
-  
-  DAU<-renewalAll$DAU
-  
-  LimDis<-comments
 
-  status<-NA
+  
+  LimDis<-gsub('"','',data %>% html_nodes(xpath = "//div[text()='Disclaimer:']/following::div[1]") %>% html_text())
+  
+  if (length(LimDis)==0) {
+    
+    LimDis<-NA
+  }
   
 
+  statusw<-data %>% html_nodes(xpath = "//div[text()='TM5 Common Status Descriptor:']/../div") %>% html_text()
+  statusw<-paste(statusw,collapse = ",")
+  
+  if (grepl("LIVE/REGISTRATION",statusw)) {
+    status<-"REGISTERED"
+    
+  } else if (grepl("LIVE/APPLICATION",statusw)) {
+    
+    status<-"FILED"
+    
+  }else if (grepl("DEAD/",statusw)) {
+    
+    status<-"INACTIVE"
+    
+  } else {status<-NA}
+
+  if (acceptance!="01.01.1800") {
+  
+  x <- 0 
+  while (x<100) {
+    
+    x<-x+10
+    
+    tmpDate<-as.Date(acceptance,"%d.%m.%Y") %m+% years(x)
+    
+    if (tmpDate>today()) {
+      
+      renewal<- tmpDate
+      
+      break
+      
+    }
+    
+  }
+  
+  tmpDAU<-tmpDate<-as.Date(acceptance,"%d.%m.%Y") %m+% years(6)
+  
+  if (tmpDAU>today()) {
+    
+      DAU<-tmpDAU
+  } else {
+    
+      DAU<- renewal
+
+  }
+  } else {
+    renewal<-as.Date("01.01.1800", "%d.%m.%Y")
+    DAU<-as.Date("01.01.1800", "%d.%m.%Y")
+    
+  }
+
+  renewal<-format(renewal, "%d.%m.%Y")
+  if (length(renewal)==0 || is.na(renewal)) {
+    
+    renewal<-format(as.Date("1800-01-01","%Y-%m-%d"),"%d.%m.%Y")
+  }
+  
+  DAU<-format(DAU, "%d.%m.%Y")
+  if (length(DAU)==0 || is.na(DAU)) {
+    
+    DAU<-format(as.Date("1800-01-01","%Y-%m-%d"),"%d.%m.%Y")
+  }
   
   words<-NA
   

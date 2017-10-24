@@ -1,9 +1,3 @@
-#loading sources
-source("Auxillary.R")
-source("JoinAndCompare.R")
-source("AUS_Scrapping.R")
-source("US_Scrapping.R")
-source("AR_Scrapping.R")
 
 ##Creating subfolders
 #Storing logos

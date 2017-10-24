@@ -8,7 +8,12 @@ package.check <- lapply(packages, FUN = function(x) {
   }
 })
 
-
+#loading sources
+source("Auxillary.R")
+source("JoinAndCompare.R")
+source("AUS_Scrapping.R")
+source("US_Scrapping.R")
+source("AR_Scrapping.R")
 source("Main.R")
 #python.load("PyhtonScrapDataURI.py")
 
