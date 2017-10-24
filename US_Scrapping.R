@@ -199,7 +199,7 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-78295345
+  #AppNo <-78309804
 
   #Making URL and Reading data
   current<-Sys.getlocale("LC_TIME")
@@ -453,15 +453,19 @@ USScrap <- function(AppNo) {
     owner<-trimws(gsub("Name:","",owner1$OwnerName))
   }
   
-
+   
+ 
+   
+   LimDis<-gsub('"','',data %>% html_nodes(xpath = "//div[text()='Disclaimer:']/following::div[1]") %>% html_text())
   
-  LimDis<-gsub('"','',data %>% html_nodes(xpath = "//div[text()='Disclaimer:']/following::div[1]") %>% html_text())
-  
-  if (length(LimDis)==0) {
+  if (length(LimDis)==0 && nchar(LimDis)>2) {
     
     LimDis<-NA
-  }
-  
+    
+  } else
+
+
+
 
   statusw<-data %>% html_nodes(xpath = "//div[text()='TM5 Common Status Descriptor:']/../div") %>% html_text()
   statusw<-paste(statusw,collapse = ",")
@@ -479,7 +483,7 @@ USScrap <- function(AppNo) {
     
   } else {status<-NA}
 
-  if (acceptance!="01.01.1800") {
+  if (acceptance!="01.01.1800" && status!="INACTIVE") {
   
   x <- 0 
   while (x<100) {
@@ -530,7 +534,12 @@ USScrap <- function(AppNo) {
   
   image<-NA
 
-
+  agComment<-data %>% html_nodes(xpath = "//div[text()='Status:']/following::div[1]") %>% html_text()
+  agComment<-gsub("\r","",agComment)
+  agComment<-gsub("\t","",agComment)
+  agComment<-gsub("\n","",agComment)
+  agComment<-trimws(agComment)
+  
   #return DF
   tmpDF <- cbind(
     data.frame(
@@ -555,6 +564,7 @@ USScrap <- function(AppNo) {
       words,
       image,
       imageUrl,
+      agComment,
       LimDis,
       owner,
       ownerAddr,
@@ -602,7 +612,8 @@ USScrap <- function(AppNo) {
     `8th Class`  =class8,
     `8th Goods & Services`=description8,
     `9th Class`  =class9,
-    `9th Goods & Services`=description9
+    `9th Goods & Services`=description9,
+    `Agent's comment`=agComment
   )
 
 
