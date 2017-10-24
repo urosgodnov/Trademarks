@@ -65,79 +65,6 @@ GetOwner<-function(dataOwner) {
 
 
 
-# 
-# USRenewal <- function(url) {
-#   x <- url %>% read_html()%>%
-#     html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']") %>% html_text()
-#   
-#   if (length(x) > 0 ) {
-#     remDr$navigate(url)
-#     
-#     Sys.sleep(1)
-#     
-#     try(MTab <-
-#           remDr$findElement(using = "id", value = "maintenanceTabBtn"), silent = TRUE)
-#     try(MTab$clickElement(), silent = TRUE)
-#     
-#     page_source <- remDr$getPageSource()
-#     t <- read_html(page_source[[1]])
-#     
-#     renewal <- t %>%
-#       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'§9') and contains(text(),'without')]/following::div[1]") %>%
-#       html_text()
-#     
-#     DAU<-t %>%
-#       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'§8 & 9') and contains(text(),'without')]/following::div[1]") %>%
-#       html_text()
-#     
-#     
-#     commentAll<-c("")
-#     
-#     comment<-t %>%
-#       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'Latest') and contains(text(),'§8') and not(contains(text(),'without'))]") %>%
-#       html_text()
-#     
-#     commentAll<-c(commentAll,gsub("^\\s+|\\s+$","",comment))
-#     
-#     comment<-t %>%
-#       html_nodes(xpath = "//div[@class='tabBody']//li[@id='maintenanceTab']//div[contains(text(),'Latest') and contains(text(),'§8') and not(contains(text(),'without'))]/following::div[1]") %>%
-#       html_text()
-#     
-#     commentAll<-c(commentAll,gsub("^\\s+|\\s+$","",comment))
-#     
-#     commentAll<-paste(commentAll, collapse = "")
-#     
-#     renewal <- as.Date(renewal, "%B. %d, %Y")
-#     
-#     
-#     renewal <- format(renewal, "%d.%m.%Y")
-#     
-#     DAU <- as.Date(DAU, "%B. %d, %Y")
-#     
-#     
-#     DAU <- format(DAU, "%d.%m.%Y")
-#     
-#   } else {
-#     renewal <- NA
-#     commentAll<-NA
-#     DAU<-NA
-#   }
-#   
-#   if (length(renewal) == 0 || is.na(renewal)) {
-#     #when rbind I want dates to stay dates
-#     renewal <- format(as.Date("1800-01-01", "%Y-%m-%d"), "%d.%m.%Y")
-#   }
-#   
-#   if (length(DAU) == 0 || is.na(DAU)) {
-#     #when rbind I want dates to stay dates
-#     DAU <- format(as.Date("1800-01-01", "%Y-%m-%d"), "%d.%m.%Y")
-#   }
-#   return(data.frame(renewal,commentAll,DAU, stringsAsFactors=FALSE))
-#   
-# }  
-  
-
-
 USClasses<-function(data) {
   
   tmpDF <- data.frame(matrix(ncol = 18, nrow = 1))
@@ -199,7 +126,8 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-78309804
+  #AppNo <-01428101
+
 
   #Making URL and Reading data
   current<-Sys.getlocale("LC_TIME")
@@ -209,6 +137,7 @@ USScrap <- function(AppNo) {
   AppNo<-gsub("/","",AppNo)
   AppNo<-gsub("-","",AppNo, fixed=TRUE)
   
+  try(rm("data"), silent = TRUE) 
   try(rm("tmpDF"), silent = TRUE) 
   try(rm("dataOwner"), silent = TRUE)
   try(rm("statusURL"), silent = TRUE)
@@ -216,7 +145,7 @@ USScrap <- function(AppNo) {
   if (!grepl('^[0-9]+$', AppNo)) {
     
     tmpDF = as.data.frame(NULL)
-    return(tmpDF)
+    return(shtmpDF)
   }
   
   url <-
@@ -235,6 +164,11 @@ USScrap <- function(AppNo) {
   
   try(data <- statusURL %>% read_html(), silent=TRUE)
   
+  if (!(class(data)[1] %in% "xml_document")) {
+    tmpDF = as.data.frame(NULL)
+    return(tmpDF)
+    
+  }
 
   application <-
     as.Date(
@@ -540,10 +474,16 @@ USScrap <- function(AppNo) {
   agComment<-gsub("\n","",agComment)
   agComment<-trimws(agComment)
   
+  ##AppNumber
+  AppNumber<-data %>% html_nodes(xpath = "//div[text()='US Serial Number:']/following::div[1]")%>% html_text()
+  AppNumber<-gsub("\r","",AppNumber)
+  AppNumber<-gsub("\n","",AppNumber)
+  AppNumber<-trimws(gsub("\t","",AppNumber))
+  
   #return DF
   tmpDF <- cbind(
     data.frame(
-      AppNo,
+      AppNumber,
       registrationNo,
       renewal,
       application,
@@ -574,7 +514,7 @@ USScrap <- function(AppNo) {
   )
 
   tmpDF<-tmpDF%>%dplyr::rename(
-    `Application no.`=AppNo,
+    `Application no.`=AppNumber,
     `Application date`=application,
     `Registration no.`=registrationNo,
     `Registration date`=acceptance,

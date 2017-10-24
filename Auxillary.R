@@ -72,13 +72,13 @@ downloadData <- function(Country,
     appNumber <- gsub(",", "", appNumber)
     appNumber <- gsub("/", "", appNumber)
     appNumber <- gsub("-", "", appNumber)
-    appNumber <- gsub(".", "", appNumber, fixed = TRUE)
+    appNumber <- trimws(gsub("\\.", "", appNumber))
     
     cat(paste("Downloading Trademark ", appNumber, "...\n", sep = ""))
     
     if (Country == "Australia") {
       try(scrapData <- AUSScrap(appNumber), silent = TRUE)
-    } else if (Country == "USA")
+    } else if (Country == "USA") 
     {
       localSys <- Sys.getlocale("LC_ALL")
       
@@ -103,7 +103,7 @@ downloadData <- function(Country,
       
       filenm = paste("./tmpData/", Country, "/", appNumber, ".Rda", sep = "")
       
-      
+     
       
       save(scrapData, file = filenm)
       try(rm("scrapData"), silent = TRUE)
