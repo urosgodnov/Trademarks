@@ -15,7 +15,7 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
   
   highlight <- "test"
   
-  for (i in 4:ncol) {
+  for (i in 3:ncol) {
     
     for (j in 1:nrow) {
       
@@ -101,25 +101,35 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
   }
   
   #here i put app no. Watch what is unique
-  RegNumList<-as.list(unique(gsub("\\.","",allData$`Application no.`[allData$sourceType=='verification'])))
+  RegNumList<-as.list(unique(gsub("\\D","",allData$`Application no.`[allData$sourceType=='verification'])))
   #Adding logos
   for (i in 1:length(RegNumList)) {
     
     
     #Read registration number
     RegNum<-RegNumList[[i]]
+
     
-    imagFile<-paste("./logos/",RegNum,".jpg",sep="")
-    if(file.exists(imagFile)) {
-    
-      img <- try(readJPEG(imagFile, native = FALSE),silent = TRUE)
-      target<-try(paste("./logos/",RegNum,".png",sep=""), silent = TRUE)
-      try(writePNG(img,target=target), silent = TRUE)
+    imagFile<-paste("./logos/",RegNum,".jpeg",sep="")
+    imagFile1<-paste("./logos/",RegNum,".gif",sep="")
+    # if(file.exists(imagFile) || file.exists(imagFile1)) {
+    # 
+    #   img <- try(readJPEG(imagFile, native = FALSE),silent = TRUE)
+    #   target<-try(paste("./logos/",RegNum,".png",sep=""), silent = TRUE)
+    #   try(writePNG(img,target=target), silent = TRUE)
+    #   
+    #   if (class(img)=="try-error") {
+    #     executable<-"C:/phantomjs/bin/phantomjs.exe"
+    #     img<-try(read.gif(filename = imagFile1),silent = TRUE)
+    #     convertGraph(from=imagFile, to=target,path=executable)
+    #     
+    #   }
+
       
       
-      try(addPicture(target, sheet, scale=0.2,startRow =startRow+3*i, startColumn =startColumn+9 ))
+      try(addPicture(imagFile, sheet, scale=0.2,startRow =startRow+3*i, startColumn =startColumn+9 ))
       
-    }
+    # }
   }
   
   saveWorkbook(wb, paste("./VerificationResults/",Country,"_VerificationResults.xlsx"))
@@ -133,7 +143,7 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 
 joinAndCompare<-function(verificationFile,destinationFile, Country){
    #
-   #   path<-"./Inputdata/USA_test3.xlsx"
+   #   path<-"./Inputdata/USA_test2.xlsx"
    #  # #  # #
    #  # # ##destinationFile<-read_excel(path=path, skip=1)
    #  # # # #
@@ -156,10 +166,10 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
    # destinationFile<-source
    #  # # #
    # path<-"./data/USA_online.xlsx"
-
-   # print(path)
-   # verificationFile<-as.data.frame(read_excel(path=path))
-    #names(verificationFile)<-tolower(names(verificationFile))
+   # 
+   # # print(path)
+   #  verificationFile<-as.data.frame(read_excel(path=path))
+   #  #names(verificationFile)<-tolower(names(verificationFile))
 
   
     colnames<-names(destinationFile)
@@ -167,12 +177,13 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
 
     #Add additional column with source type
     destinationFile<-cbind(data.frame(sourceType=rep(c("client","agent"),nrow(destinationFile)/2)),destinationFile)
+   
     #names(destinationFile)<-tolower(names(destinationFile))
 
     #destinationFile<-destinationFile[!is.na(destinationFile$`Application no.`),]
     
     colnames(destinationFile)<-gsub(" ","__",names(destinationFile))
-    
+    destinationFile$Application__no.<-gsub("\\D", "", destinationFile$Application__no.)
     
     verificationFile<-cbind(data.frame(sourceType=rep("verification",nrow(verificationFile))),verificationFile)
 
@@ -181,7 +192,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     namesV<-names(verificationFile)
     colnames(verificationFile)<-gsub(" ","__",namesV)
     destinationRecordName<-unique(destinationFile[,c("Record_ID","Trademark","Application__no.")])
-    
+    destinationRecordName$Application__no.<-gsub("\\D", "", destinationRecordName$Application__no.)
 
     #I'll take the shorter version of Trademark name
      destinationRecordName<-as.data.table(destinationRecordName[!is.na(destinationRecordName$Application__no.),])
@@ -199,7 +210,8 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
      
      verificationFile<-v1
     verificationFile<-inner_join(destinationRecordName,verificationFile, by="Application__no.",copy=TRUE)
-    colnames(verificationFile)[2]<-c("Trademark")
+    colnames(verificationFile)[5]<-c("Trademark")
+    colnames(verificationFile)[1]<-c("Record_ID")
     
     #creating same column structure in verification file
     tempVer <- verificationFile[intersect(names(destinationFile), names(verificationFile))]

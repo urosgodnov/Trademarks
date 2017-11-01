@@ -23,6 +23,13 @@ readingSource <- function(which = "Australia", filev) {
   source$`Application no.` <- gsub(",", "", source$`Application no.`)
   #cleaning appno
   
+  rowsPerAppNum<-source%>%select(`Application no.`,Record_ID)%>%
+    group_by(`Application no.`,Record_ID)%>%dplyr::mutate(Number=n())%>%
+    select(Number,Record_ID,`Application no.`)%>%filter(Number==1)
+  
+  if (nrow(rowsPerAppNum)>0)
+  {insert(outputConsole,paste('There is a problem with data. There are more than 1 AppNo per RecordID!',as.character(rowsPerAppNum)))}
+  
   return(source)
   
   #  }

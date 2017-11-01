@@ -89,19 +89,39 @@ USClasses<-function(data) {
   classdesc<-gsub('\\*', '', classdesc)
   classdesc<-gsub(' ,', ',', classdesc)
   
-  classn<-data %>% html_nodes(xpath = "//div[text()='International Class(es):']/following::div[1]") %>% html_text()
-  
-  classn<-gsub(".*([0-9]+).*$", "\\1", classn)
-  
-  
   classStatus<-data %>% html_nodes(xpath = "//div[text()='Class Status:']/following::div[1]") %>% html_text()
   
   classStatus<-gsub("\r\n","",classStatus)
   
+  classn<-data %>% html_nodes(xpath = "//div[text()='International Class(es):']/following::div[1]") %>% html_text()
   
+  if (grepl(",",classn)) {
+    
+    classn<-gsub("\r\n","",unlist(str_split(classn,",",simplify = FALSE)))
+    classn<-gsub("(^|[^0-9])0+", "\\1", classn, perl = TRUE)
+    
+    classes<-as.data.frame(cbind.fill(classn,classdesc,classStatus), stringsAsFactors = FALSE)
+    colnames(classes)<-c("classn","classdesc","classStatus")
+    
+  } else {
+  
+  classn<-gsub("\\D", "", classn)
+  
+  classn<-gsub("(^|[^0-9])0+", "\\1", classn, perl = TRUE)
+ 
   classes<-data.frame(classn,classdesc,classStatus, stringsAsFactors = FALSE)
-  
+ 
+  }
+   
   classes<-classes[classes$classStatus=="ACTIVE",]
+  
+  if (nrow(classes)==0) {
+    
+    classes<-data.frame(classn,classdesc,classStatus, stringsAsFactors = FALSE)
+    
+    classes<-head(classes,1)
+  
+  }
   
   if (length(classes)>0 && nrow(classes)>0) {
   
@@ -126,7 +146,7 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-01428101
+  #AppNo <-72340007
 
 
   #Making URL and Reading data
@@ -141,6 +161,8 @@ USScrap <- function(AppNo) {
   try(rm("tmpDF"), silent = TRUE) 
   try(rm("dataOwner"), silent = TRUE)
   try(rm("statusURL"), silent = TRUE)
+  try(rm("imageUrl"), silent = TRUE)
+  
   
   if (!grepl('^[0-9]+$', AppNo)) {
     
@@ -237,6 +259,32 @@ USScrap <- function(AppNo) {
     priorityNo<-NA
   }
   
+  if (is.na(priorityNo)) {
+    
+    priorityNo<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Registration Number:']/following::div[1]") %>% html_text())
+    
+    priorityNo<-tail(priorityNo,1)
+    if (length(priorityNo)==0) {
+      
+      priorityNo<-NA
+    }
+    
+    priority <-
+      as.Date(
+        gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Registration Date:']/following::div[1]") %>% html_text()),
+        "%B %d, %Y"
+      )
+    
+    priority<-format(priority, "%d.%m.%Y")
+    
+    if (length(priority)==0 || is.na(priority)) {
+      
+      priority<-format(as.Date("1800-01-01","%Y-%m-%d"),"%d.%m.%Y")
+    }
+    
+    
+  }
+  
   priorityCountry<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Application/Registration Country:']/following::div[1]") %>% html_text())
   
   priorityCountry<-tail(priorityCountry,1)
@@ -300,6 +348,17 @@ USScrap <- function(AppNo) {
   }
   
   
+  agentOnRecordAddr<-gsub("\r","",data %>% html_nodes(xpath = "//div[text()='Correspondent Name/Address:']/following::div[1]") %>% html_text())
+
+  agentOnRecordAddr<-gsub(agentOnRecord,"",agentOnRecordAddr)
+  
+  if (length(agentOnRecordAddr)==0) {
+    
+    agentOnRecordAddr<-NA
+  }
+  
+  agentOnRecord<-paste(agentOnRecord,agentOnRecordAddr,sep="")
+  
   associatedTMs<-gsub("\r\n","",data %>% 
                         html_nodes(xpath = "//div[contains(text(),'Claimed Ownership')]/following::div[1]//a")%>% html_text()) 
   
@@ -316,12 +375,12 @@ USScrap <- function(AppNo) {
   
   if (length(imageUrl) == 1 && !is.na(imageUrl)) {
     cat(paste("\n","Downloading image...",sep=""))
-    imageName<-paste("./logos/", AppNo, ".jpg", sep ="")
+    imageName<-paste("./logos/", AppNo, ".jpeg", sep ="")
     try(download.file(imageUrl,imageName, mode = 'wb',cacheOK=FALSE), silent = TRUE)
     
     size<-file.info(imageName)$size
     #delete files with problems
-    if (size<1000)
+    if (size<400)
     {
       file.remove(imageName)
     }
@@ -352,7 +411,7 @@ USScrap <- function(AppNo) {
   color<- gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Color(s) Claimed:']/following::div[1]") %>% html_text())
   
   if (length(color)>0) {
-  color<-ifelse(grepl('not',color),"Black and white","Color")
+  color<-ifelse(grepl('not',color),"Black and white",color)
   } else {color<-NA}
   
   #Owner na ta zajeban način
@@ -441,15 +500,20 @@ USScrap <- function(AppNo) {
   if (tmpDAU>today()) {
     
       DAU<-tmpDAU
+      renewalGP<-as.Date(renewal,"%d.%m.%Y") %m+% months(6)
+      DAUGP<-as.Date(DAU,"%d.%m.%Y") %m+% months(6)
   } else {
     
       DAU<- renewal
+      renewalGP<-as.Date(renewal,"%d.%m.%Y") %m+% months(6)
+      DAUGP<-as.Date(DAU,"%d.%m.%Y") %m+% months(6)
 
   }
   } else {
-    renewal<-as.Date("01.01.1800", "%d.%m.%Y")
-    DAU<-as.Date("01.01.1800", "%d.%m.%Y")
-    
+    renewal  <-as.Date("01.01.1800", "%d.%m.%Y")
+    renewalGP<-as.Date("01.01.1800", "%d.%m.%Y") 
+    DAU      <-as.Date("01.01.1800", "%d.%m.%Y")
+    DAUGP    <-as.Date("01.01.1800", "%d.%m.%Y") 
   }
 
   renewal<-format(renewal, "%d.%m.%Y")
@@ -458,16 +522,36 @@ USScrap <- function(AppNo) {
     renewal<-format(as.Date("1800-01-01","%Y-%m-%d"),"%d.%m.%Y")
   }
   
+  renewalGP<-format(renewalGP, "%d.%m.%Y")
+  if (length(renewalGP)==0 || is.na(renewalGP)) {
+    
+    renewalGP<-format(as.Date("1800-01-01","%Y-%m-%d"),"%d.%m.%Y")
+  }
+  
   DAU<-format(DAU, "%d.%m.%Y")
   if (length(DAU)==0 || is.na(DAU)) {
     
     DAU<-format(as.Date("1800-01-01","%Y-%m-%d"),"%d.%m.%Y")
   }
   
+  DAUGP<-format(DAUGP, "%d.%m.%Y")
+  if (length(DAUGP)==0 || is.na(DAUGP)) {
+    
+    DAUGP<-format(as.Date("1800-01-01","%Y-%m-%d"),"%d.%m.%Y")
+  }
+  
   words<-NA
   
   image<-NA
+  
 
+  trademark<-data %>% html_nodes(xpath = "//div[@id='summary']//div[text()='Mark:']/following::div[1]") %>% html_text()
+  trademark<-gsub("\r","",trademark)
+  trademark<-gsub("\t","",trademark)
+  trademark<-gsub("\n","",trademark)
+  trademark<-trimws(trademark)
+  
+  
   agComment<-data %>% html_nodes(xpath = "//div[text()='Status:']/following::div[1]") %>% html_text()
   agComment<-gsub("\r","",agComment)
   agComment<-gsub("\t","",agComment)
@@ -479,11 +563,15 @@ USScrap <- function(AppNo) {
   AppNumber<-gsub("\r","",AppNumber)
   AppNumber<-gsub("\n","",AppNumber)
   AppNumber<-trimws(gsub("\t","",AppNumber))
+  AppNumber<-gsub(",","",AppNumber)
+  AppNumber<-gsub("/","",AppNumber)
+  AppNumber<-gsub("-","",AppNumber, fixed=TRUE)
   
   #return DF
   tmpDF <- cbind(
     data.frame(
       AppNumber,
+      trademark,
       registrationNo,
       renewal,
       application,
@@ -500,6 +588,8 @@ USScrap <- function(AppNo) {
       kind,
       AppType,
       DAU,
+      renewalGP,
+      DAUGP,
       color,
       words,
       image,
@@ -515,6 +605,7 @@ USScrap <- function(AppNo) {
 
   tmpDF<-tmpDF%>%dplyr::rename(
     `Application no.`=AppNumber,
+    Trademark=trademark,
     `Application date`=application,
     `Registration no.`=registrationNo,
     `Registration date`=acceptance,
@@ -529,6 +620,8 @@ USScrap <- function(AppNo) {
     `Application type`=AppType,
     `Next DAU date`=DAU,
     `Is color`=color,
+    `Next renewal date: end of grace period`=renewalGP,
+    `Next DAU date: end of grace period`=DAUGP,
      Status=status,
     `Limitations & Disclaimers`=LimDis,
     `Agent on record`=agentOnRecord,
