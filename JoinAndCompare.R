@@ -109,8 +109,12 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
     #Read registration number
     RegNum<-RegNumList[[i]]
 
-    
+    #RegNum<-"1628688"
     imagFile<-paste("./logos/",RegNum,".jpeg",sep="")
+    if (!file.exists(imagFile)) {
+      imagFile<-paste("./logos/",RegNum,".jpg",sep="")
+      print(imagFile)
+    }
     imagFile1<-paste("./logos/",RegNum,".gif",sep="")
     # if(file.exists(imagFile) || file.exists(imagFile1)) {
     # 
@@ -127,7 +131,7 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 
       
       
-      try(addPicture(imagFile, sheet, scale=0.2,startRow =startRow+3*i, startColumn =startColumn+9 ))
+      try(addPicture(imagFile, sheet, scale=0.3,startRow =startRow+3*i, startColumn =startColumn+9 ))
       
     # }
   }
@@ -142,8 +146,8 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 }
 
 joinAndCompare<-function(verificationFile,destinationFile, Country){
-   #
-   #   path<-"./Inputdata/USA_test2.xlsx"
+
+   #   path<-"./Inputdata/AR.xlsx"
    #  # #  # #
    #  # # ##destinationFile<-read_excel(path=path, skip=1)
    #  # # # #
@@ -165,11 +169,11 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
    #  # # #
    # destinationFile<-source
    #  # # #
-   # path<-"./data/USA_online.xlsx"
+   # path<-"./data/Argentina_online.xlsx"
    # 
    # # print(path)
    #  verificationFile<-as.data.frame(read_excel(path=path))
-   #  #names(verificationFile)<-tolower(names(verificationFile))
+   ##names(verificationFile)<-tolower(names(verificationFile))
 
   
     colnames<-names(destinationFile)
@@ -210,7 +214,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
      
      verificationFile<-v1
     verificationFile<-inner_join(destinationRecordName,verificationFile, by="Application__no.",copy=TRUE)
-    colnames(verificationFile)[5]<-c("Trademark")
+    #colnames(verificationFile)[5]<-c("Trademark")
     colnames(verificationFile)[1]<-c("Record_ID")
     
     #creating same column structure in verification file
@@ -310,7 +314,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     allData$`Application no.`<-as.character(allData$`Application no.`)
     
     #Due to possible appno change, I have to overwrite some of the appno
-    allData$`Application no.`[!is.na(allData$`Application no. assigned upon renewal`)]<-as.character(allData$`Application no. assigned upon renewal`[!is.na(allData$`Application no. assigned upon renewal`)])
+    #allData$`Application no.`[!is.na(allData$`Application no. assigned upon renewal`)]<-as.character(allData$`Application no. assigned upon renewal`[!is.na(allData$`Application no. assigned upon renewal`)])
     
     if (nrow(error)>0) {
     allData<-union_all(allData,error) 
