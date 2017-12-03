@@ -10,7 +10,8 @@ GetOwner<-function(dataOwner) {
     html_text()
   
   assignementsL<-as.list(gsub(".*-([0-9]+).*", "\\1", assignements))
-  
+
+  if (length(assignementsL)>0 && class(assignementsL)=="list") {  
   for (i in length(assignementsL):1) {
     
   
@@ -55,6 +56,7 @@ GetOwner<-function(dataOwner) {
 
     
   }
+}
   
  
   
@@ -95,10 +97,10 @@ USClasses<-function(data) {
   
   classn<-data %>% html_nodes(xpath = "//div[text()='International Class(es):']/following::div[1]") %>% html_text()
   
-  if (grepl(",",classn)) {
+  if (length(classn)==1 && grepl(",",classn)) {
     
-    classn<-gsub("\r\n","",unlist(str_split(classn,",",simplify = FALSE)))
-    classn<-gsub("(^|[^0-9])0+", "\\1", classn, perl = TRUE)
+    classn<-gsub("(^|[^0-9])0+","\\1",unlist(str_split(classn,",",simplify = FALSE)))
+    classn<-gsub("\r\n", "", classn, perl = TRUE)
     
     classes<-as.data.frame(cbind.fill(classn,classdesc,classStatus), stringsAsFactors = FALSE)
     colnames(classes)<-c("classn","classdesc","classStatus")
@@ -113,9 +115,10 @@ USClasses<-function(data) {
  
   }
    
+  rows<-nrow(classes)
   classes<-classes[classes$classStatus=="ACTIVE",]
   
-  if (nrow(classes)==0) {
+  if (nrow(classes)==0 && rows>0) {
     
     classes<-data.frame(classn,classdesc,classStatus, stringsAsFactors = FALSE)
     
@@ -146,7 +149,7 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-72340007
+  #AppNo <-"74132499"
 
 
   #Making URL and Reading data
@@ -167,7 +170,7 @@ USScrap <- function(AppNo) {
   if (!grepl('^[0-9]+$', AppNo)) {
     
     tmpDF = as.data.frame(NULL)
-    return(shtmpDF)
+    return(tmpDF)
   }
   
   url <-
@@ -187,11 +190,13 @@ USScrap <- function(AppNo) {
   try(data <- statusURL %>% read_html(), silent=TRUE)
   
   if (!(class(data)[1] %in% "xml_document")) {
+    
+
     tmpDF = as.data.frame(NULL)
     return(tmpDF)
     
-  }
-
+  
+}
   application <-
     as.Date(
       gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Application Filing Date:']/following::div[1]") %>% html_text()),
@@ -333,6 +338,7 @@ USScrap <- function(AppNo) {
   
   kind<-switch(as.numeric(kind),"WORD","DEVICE","WORD-DEVICE","WORD","WORD-DEVICE")
 
+  kind<-ifelse(is.null(kind),NA,kind)
   
   AppType<- try(gsub("\r\n","",data %>% html_nodes(xpath = "//span[contains(@data-sectiontitle,'International Registration')]/following::div[1]") %>% html_text()), silent=TRUE)
 
