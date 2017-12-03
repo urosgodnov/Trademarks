@@ -57,7 +57,8 @@ GetOwner<-function(dataOwner) {
     
   }
 }
-  
+ else {OwnerName<-NA
+       OwnerAddr<-NA} 
  
   
   return(data.frame(OwnerName,OwnerAddr, stringsAsFactors = FALSE))
@@ -448,8 +449,29 @@ USScrap <- function(AppNo) {
   {
     owner1<-GetOwner(dataOwner)
     
+    if (nrow(na.omit(owner1))==0) {
+      
+      owner<-gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Owner Name:']/following::div[1]") %>% html_text())
+      
+      if (length(owner)==0) {
+        
+        owner<-NA
+      }
+      
+      ownerAddr<-gsub("\r","",data %>% html_nodes(xpath = "//div[text()='Owner Address:']/following::div[1]") %>% html_text())
+      
+      ownerAddr<-sub("\n","",ownerAddr)
+      
+      
+      if (length(ownerAddr)==0) {
+        
+        ownerAddr<-NA
+      }
+    }
+    else {
     ownerAddr<-owner1$OwnerAddr
     owner<-trimws(gsub("Name:","",owner1$OwnerName))
+    }
   }
   
    
