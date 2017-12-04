@@ -65,11 +65,27 @@ flyt <- gformlayout(cont=lg)
 addSpring(lg)
 
 # choose country
-countries <- c("Australia"="Australia", "USA"="USA", "Argentina"="Argentina")
+countries <- c("Australia"="Australia", "USA"="USA", "Argentina"="Argentina", "China"="China")
 
-country <- gcombobox(names(countries), cont=flyt, label="Country")
+country <- gcombobox(names(countries), cont=flyt, label="Country",
+                     handler=function(h,...){
+                       if (svalue(country)=="China")
+                       {
+                         visible(bgl2)<-TRUE
+                         visible(what)<-FALSE
+                         svalue(what)="only compare"
+                         
+                       } else {
+                         
+                         visible(bgl2)<-FALSE
+                         visible(what)<-TRUE
+                      
+                       }
+                       
+                     } )
 
 # choose wheter only compare or also scrap and compare
+
 what <- gradio(c("scrap and compare", "only compare"), horizontal=TRUE, 
                cont=flyt, label="Action",
                handler=function(h,...){
@@ -81,6 +97,7 @@ what <- gradio(c("scrap and compare", "only compare"), horizontal=TRUE,
                      
 
                })
+
 
 #validation file with new group, so user can hide button
 bgl1 <- ggroup(cont=flyt)
@@ -104,6 +121,7 @@ files<- gfilebrowse(text = "Select file with scraped data (County_online.xlsx)",
 visible(bgl2)<-FALSE
 size(w) <- c(800, 400)
 visible(w) <- TRUE
+
 
 
 #adding handler for execute button

@@ -113,9 +113,11 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
     imagFile<-paste("./logos/",RegNum,".jpeg",sep="")
     if (!file.exists(imagFile)) {
       imagFile<-paste("./logos/",RegNum,".jpg",sep="")
-      print(imagFile)
+      if (!file.exists(imagFile)) {
+        imagFile<-paste("./logos/",RegNum,".png",sep="")
+      }
     }
-    imagFile1<-paste("./logos/",RegNum,".gif",sep="")
+    #imagFile1<-paste("./logos/",RegNum,".gif",sep="")
     # if(file.exists(imagFile) || file.exists(imagFile1)) {
     # 
     #   img <- try(readJPEG(imagFile, native = FALSE),silent = TRUE)
@@ -146,8 +148,13 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 }
 
 joinAndCompare<-function(verificationFile,destinationFile, Country){
-
-   #   path<-"./Inputdata/AR.xlsx"
+    
+  localTime <- Sys.getlocale("LC_TIME")
+  
+  #local time to Australiaan
+  Sys.setlocale("LC_TIME", "German")
+  
+   #   path<-"./Inputdata/China.xlsx"
    #  # #  # #
    #  # # ##destinationFile<-read_excel(path=path, skip=1)
    #  # # # #
@@ -169,11 +176,11 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
    #  # # #
    # destinationFile<-source
    #  # # #
-   # path<-"./data/Argentina_online.xlsx"
+   # path<-"./data/China.xlsx"
    # 
    # # print(path)
    #  verificationFile<-as.data.frame(read_excel(path=path))
-   ##names(verificationFile)<-tolower(names(verificationFile))
+   # #names(verificationFile)<-tolower(names(verificationFile))
 
   
     colnames<-names(destinationFile)
@@ -214,7 +221,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
      
      verificationFile<-v1
     verificationFile<-inner_join(destinationRecordName,verificationFile, by="Application__no.",copy=TRUE)
-    #colnames(verificationFile)[5]<-c("Trademark")
+    verificationFile<-dplyr::rename(verificationFile,Trademark=Trademark.y)
     colnames(verificationFile)[1]<-c("Record_ID")
     
     #creating same column structure in verification file
@@ -233,6 +240,11 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     #factor to columns Due to special names it doesn't work with dplyr
      indx <- sapply(verificationFile, is.factor)
     verificationFile[indx] <- lapply(verificationFile[indx], function(x) (as.character(x)))
+    
+    indx <- sapply(verificationFile, is.POSIXct)
+    verificationFile[indx] <- lapply(verificationFile[indx], function(x) (format(x, "%d.%m.%Y")))
+    
+
   
     #selecting order of columns as in destination file to perform union
     verificationFile<-verificationFile[,names(destinationFile)]
@@ -342,6 +354,8 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
       
     } else {insert(outputConsole,paste('There is a problem with data.',as.character(rowsPerAppNum)))}
     
+    #changing format
+    Sys.setlocale("LC_TIME", localTime)
     rm(list = ls())
 }
 
