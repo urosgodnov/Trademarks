@@ -106,8 +106,14 @@ downloadData <- function(Country,
       #Saving into tempData
       
       
+      if (Country=="BENELUX") {
+        
+        appNumber<-as.vector(scrapData$`Application no.`)
+      }
+      
       insert(outputConsole,
              paste("Downloading Trademark ", appNumber))
+
       
       filenm = paste("./tmpData/", Country, "/", appNumber, ".Rda", sep = "")
       
@@ -123,19 +129,9 @@ downloadData <- function(Country,
   }
   
   
-  if (Country == "US")
-  {
-    #try(driver$server$stop(), silent = TRUE)
-    #try(remDr$close(), silent = TRUE)
-  }
+
   
-  if (Country == "BENELUX")
-  {
-    try(driver$server$stop(), silent = TRUE)
-    try(remDr$close(), silent = TRUE)
-  }
-  
-  #Country<-"USA"
+  #Country<-"BENELUX"
   path <- paste("./tmpData/", Country, "/", sep = "")
   filename <- paste("./data/", Country, "_online.xlsx", sep = "")
   

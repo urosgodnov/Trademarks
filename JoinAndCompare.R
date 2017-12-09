@@ -5,7 +5,8 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
   errors<-allData[allData$Eval==0,-ncol(allData)]
   errors<-errors%>%arrange(Record_ID,sourceType)
   allData<-allData[allData$Eval==1,-ncol(allData)]
-  allData$`Application no.`<-as.integer(allData$`Application no.`)
+  if (Country!="BENELUX"){
+  allData$`Application no.`<-as.integer(allData$`Application no.`)}
   allData<-allData%>%arrange(Record_ID,sourceType)
   #selecting cells which will be formated differently
   mdata<-as.matrix(allData)
@@ -150,11 +151,12 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 joinAndCompare<-function(verificationFile,destinationFile, Country){
     
   localTime <- Sys.getlocale("LC_TIME")
-  
+
   #local time to Australiaan
   Sys.setlocale("LC_TIME", "German")
-  
-   #   path<-"./Inputdata/China.xlsx"
+
+   #   path<-"./Inputdata/AR.xlsx"
+   #   Country<-"Argentina"
    #  # #  # #
    #  # # ##destinationFile<-read_excel(path=path, skip=1)
    #  # # # #
@@ -176,7 +178,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
    #  # # #
    # destinationFile<-source
    #  # # #
-   # path<-"./data/China.xlsx"
+   # path<-"./data/Argentina_online.xlsx"
    # 
    # # print(path)
    #  verificationFile<-as.data.frame(read_excel(path=path))
@@ -220,14 +222,37 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
      v1<-verificationFile
      
      verificationFile<-v1
+
+    if (Country=="BENELUX") {
+      verificationFile$Application__no.<-as.numeric(verificationFile$Application__no.)
+      verificationFile$AppOLD<-v1$Application__no.
+      destinationRecordName$Application__no.<-as.numeric(destinationRecordName$Application__no.)
+      
+     }
     verificationFile<-inner_join(destinationRecordName,verificationFile, by="Application__no.",copy=TRUE)
-    verificationFile<-dplyr::rename(verificationFile,Trademark=Trademark.y)
+   
+     if("Trademark.y" %in% colnames(verificationFile)) {
+           verificationFile<-dplyr::rename(verificationFile,Trademark=Trademark.y)
+     }
+    
+    if (Country=="BENELUX") {
+      verificationFile<-dplyr::rename(verificationFile,Application__no1.=Application__no.)
+      verificationFile<-dplyr::rename(verificationFile,Application__no.=AppOLD)
+      
+    }
     colnames(verificationFile)[1]<-c("Record_ID")
     
     #creating same column structure in verification file
-    tempVer <- verificationFile[intersect(names(destinationFile), names(verificationFile))]
-    tempCol<-destinationFile[destinationFile$Record_ID==-99,setdiff(names(destinationFile), names(verificationFile))] #that never happens, but I get the right datatypes
-    
+    if (Country == "BENELUX")
+    {
+      tempVer <-
+        verificationFile[intersect(c(names(destinationFile), "Application__no1."), names(verificationFile))]
+    } else {
+      tempVer <-
+        verificationFile[intersect((names(destinationFile)), names(verificationFile))]
+    }
+    tempCol <-
+      destinationFile[destinationFile$Record_ID == -99, setdiff(names(destinationFile), names(verificationFile))] #that never happens, but I get the right datatypes
     
     
     #same length
@@ -247,24 +272,35 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
 
   
     #selecting order of columns as in destination file to perform union
-    verificationFile<-verificationFile[,names(destinationFile)]
+    if (Country=="BENELUX") {
+      verificationFile<-verificationFile[,c(names(destinationFile),"Application__no1.")]
+      
+    } else {
+    verificationFile<-verificationFile[,names(destinationFile)]}
     
     #to be on the safe side, I convert Registration_no. to character
     verificationFile$Registration__no.<-as.character(verificationFile$Registration__no.)
     
     #Performing Union
+
     allData<-union_all(destinationFile,verificationFile)
     
     #Excluding elements, that are not in verification file
     #Those will be managed with erros
-    allData<-allData[(allData$Application__no. %in% verificationFile$Application__no.),]
-    
-    #Sorting and adding Trademark
     #recordID to numeric
     allData$Record_ID<-as.integer(allData$Record_ID)
-    allData$Application__no.<-as.integer(allData$Application__no.)
+    if (Country=="BENELUX") {
+      allData<-allData[(allData$Record_ID %in% verificationFile$Record_ID),]
+      
+    } else {
+    allData<-allData[(allData$Application__no. %in% verificationFile$Application__no.),] }
+    
+    #Sorting and adding Trademark
 
-    allData<-allData%>%dplyr::arrange(Application__no.,sourceType)
+    if (Country!="BENELUX") {
+         allData$Application__no.<-as.integer(allData$Application__no.)
+    }
+    allData<-allData%>%dplyr::arrange(Record_ID,sourceType)
     
     allData$Image<-NA
     
@@ -325,8 +361,13 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     #Alldata application number to string as errors have app number with this type
     allData$`Application no.`<-as.character(allData$`Application no.`)
     
+    if (Country=="BENELUX") {
+      allData<-allData%>%dplyr::select(-(`Application no1.`))
+      
+    }
+    
     #Due to possible appno change, I have to overwrite some of the appno
-    #allData$`Application no.`[!is.na(allData$`Application no. assigned upon renewal`)]<-as.character(allData$`Application no. assigned upon renewal`[!is.na(allData$`Application no. assigned upon renewal`)])
+    allData$`Application no.`[!is.na(allData$`Application no. assigned upon renewal`)]<-as.character(allData$`Application no. assigned upon renewal`[!is.na(allData$`Application no. assigned upon renewal`)])
     
     if (nrow(error)>0) {
     allData<-union_all(allData,error) 

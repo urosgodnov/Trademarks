@@ -14,6 +14,9 @@ BXScrap <- function(regNo) {
   
   data <- url %>% read_html()
   
+  data %>% html_nodes(xpath = "//h3") %>%
+    html_text()
+  
   threeThings <-
     data %>% html_node(xpath = "//h3[text()='Nummer en dagtekening (dag en uur) van het depot']/following::p[1]") %>%
     html_text()
@@ -75,7 +78,7 @@ BXScrap <- function(regNo) {
   
   owner<-unlist(strsplit(as.character(owner),"<br>"))
   
-  ownerAddr<-paste(gsub("</p>","",tail(owner,length(owner)-1)),collapse ="/n")
+  ownerAddr<-paste(gsub("</p>","",tail(owner,length(owner)-1)),collapse ="\n")
     
   owner<-head(owner,1)
   
@@ -88,7 +91,7 @@ BXScrap <- function(regNo) {
 
   agentOnRecord<-unlist(strsplit(as.character(agentOnRecord),"<br>"))
   
-  agentOnRecord<-paste(gsub("<p>|</p>","",agentOnRecord),collapse ="/n")
+  agentOnRecord<-paste(gsub("<p>|</p>","",agentOnRecord),collapse ="\n")
   
   
 
@@ -192,7 +195,7 @@ BXScrap <- function(regNo) {
 
   if (length(imageUrl) == 1 && !is.na(imageUrl)) {
     cat(paste("\n","Downloading image...",sep=""))
-    imageName<-paste("./logos/", AppNo, ".jpg", sep ="")
+    imageName<-paste("./logos/", AppNo, ".jpeg", sep ="")
     try(download.file(imageUrl,imageName, mode = 'wb',cacheOK=FALSE), silent = TRUE)
   } else {imageUrl<-NA}
   
