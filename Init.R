@@ -15,6 +15,7 @@ source("JoinAndCompare.R")
 source("AUS_Scrapping.R")
 source("US_Scrapping.R")
 source("AR_Scrapping.R")
+source("BX_Scrapping.R")
 source("Main.R")
 #python.load("PyhtonScrapDataURI.py")
 
@@ -65,7 +66,7 @@ flyt <- gformlayout(cont=lg)
 addSpring(lg)
 
 # choose country
-countries <- c("Australia"="Australia", "USA"="USA", "Argentina"="Argentina", "China"="China")
+countries <- c("Australia"="Australia", "BENELUX"="BENELUX", "USA"="USA", "Argentina"="Argentina", "China"="China")
 
 country <- gcombobox(names(countries), cont=flyt, label="Country",
                      handler=function(h,...){

@@ -47,12 +47,17 @@ downloadData <- function(Country,
   
   unlink(paste("./tmpData/", Country, "/*.*", sep = ""))
   
-  sourceAPP <- unique(source$`Application no.`)
+  if (Country=="BENELUX") {
+    sourceAPP <- unique(source$`Registration no.`)
+  }else {
+    sourceAPP <- unique(source$`Application no.`)
+    }
+  
   sourceAPP <- na.omit(sourceAPP)
   
   if (is.null(from) | is.null(to))
   {
-    from <- 1
+     from <- 1
     to <- length(sourceAPP)
   }
   
@@ -63,16 +68,7 @@ downloadData <- function(Country,
   
   #If country is US, start Selenium
   
-  if (Country == "USA")
-  {
-    #insert(outputConsole, "Starting Selenium server...")
-    
-    #driver <-
-    # try(rsDriver(verbose = FALSE, port = 4445L), silent = TRUE)
-    #remDr <- try(driver[["client"]], silent = TRUE)
-    
-    #try(remDr$open(silent = TRUE), silent = TRUE)
-  }
+
   
   for (i in 1:length(appNo)) {
     appNumber <- appNo[[i]]
@@ -92,12 +88,17 @@ downloadData <- function(Country,
       Sys.setlocale("LC_ALL", "english")
       
       try(scrapData <- USScrap(appNumber), silent = FALSE)
+      Sys.sleep(1)
       
       Sys.setlocale("LC_ALL", localSys)
       
     } else if (Country == "Argentina")
     {
       try(scrapData <- ARScrap(appNumber), silent = FALSE)
+      
+    }else if (Country == "BENELUX")
+    {
+      try(scrapData <- BXScrap(appNumber), silent = FALSE)
       
     }
     
@@ -128,6 +129,13 @@ downloadData <- function(Country,
     #try(remDr$close(), silent = TRUE)
   }
   
+  if (Country == "BENELUX")
+  {
+    try(driver$server$stop(), silent = TRUE)
+    try(remDr$close(), silent = TRUE)
+  }
+  
+  #Country<-"USA"
   path <- paste("./tmpData/", Country, "/", sep = "")
   filename <- paste("./data/", Country, "_online.xlsx", sep = "")
   
