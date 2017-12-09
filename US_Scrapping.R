@@ -150,7 +150,7 @@ USClasses<-function(data) {
 
 
 USScrap <- function(AppNo) {
-  #AppNo <-"74132499"
+  #AppNo <-"73802871"
 
 
   #Making URL and Reading data
@@ -204,6 +204,16 @@ USScrap <- function(AppNo) {
       "%B. %d, %Y"
     )
   
+  if (is.na(application) && length(application)>0) {
+    
+    application <-
+      as.Date(
+        gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Application Filing Date:']/following::div[1]") %>% html_text()),
+        "%B %d, %Y"
+      )
+    
+  }
+  
   application<-format(application, "%d.%m.%Y")
   
   if (length(application)==0 || is.na(application)) {
@@ -224,6 +234,16 @@ USScrap <- function(AppNo) {
       gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Registration Date:']/following::div[1]") %>% html_text()),
       "%B. %d, %Y"
     )
+  
+  if (is.na(acceptance) && length(acceptance)>0) {
+    
+    acceptance <-
+      as.Date(
+        gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Registration Date:']/following::div[1]") %>% html_text()),
+        "%B %d, %Y"
+      )
+    
+  }
 
   acceptance<-format(acceptance, "%d.%m.%Y")
   if (length(acceptance)==0 || is.na(acceptance)) {
@@ -236,6 +256,16 @@ USScrap <- function(AppNo) {
       gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Application Filing Date:']/following::div[1]") %>% html_text()),
       "%B. %d, %Y"
     )
+  
+  if (is.na(priority) && length(priority)>0) {
+    
+    priority <-
+      as.Date(
+        gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Application Filing Date:']/following::div[1]") %>% html_text()),
+        "%B %d, %Y"
+      )
+    
+  }
 
   priority<-format(priority, "%d.%m.%Y")
 
@@ -249,6 +279,16 @@ USScrap <- function(AppNo) {
       gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Notice of Allowance Date:']/following::div[1]") %>% html_text()),
       "%B. %d, %Y"
     )
+  
+  if (is.na(NoticeOfAllowanceDate) && length(NoticeOfAllowanceDate)>0) {
+    
+    NoticeOfAllowanceDate <-
+      as.Date(
+        gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Notice of Allowance Date:']/following::div[1]") %>% html_text()),
+        "%B %d, %Y"
+      )
+    
+  }
   
   NoticeOfAllowanceDate<-format(NoticeOfAllowanceDate, "%d.%m.%Y")
   
@@ -278,8 +318,18 @@ USScrap <- function(AppNo) {
     priority <-
       as.Date(
         gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Registration Date:']/following::div[1]") %>% html_text()),
-        "%B %d, %Y"
+        "%B. %d, %Y"
       )
+    
+    if (is.na(priority) && length(priority)>0) {
+      
+      priority <-
+        as.Date(
+          gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Foreign Registration Date:']/following::div[1]") %>% html_text()),
+          "%B %d, %Y"
+        )
+      
+    }
     
     priority<-format(priority, "%d.%m.%Y")
     
@@ -306,6 +356,16 @@ USScrap <- function(AppNo) {
       "%B. %d, %Y"
     )
   
+  if (is.na(publication) && length(publication)>0) {
+    
+    publication <-
+      as.Date(
+        gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='Publication Date:']/following::div[1]") %>% html_text()),
+        "%B %d, %Y"
+      )
+    
+  }
+  
   publication<-format(publication, "%d.%m.%Y")
   
   if (length(publication)==0 || is.na(publication)) {
@@ -318,6 +378,14 @@ USScrap <- function(AppNo) {
     as.Date(gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='First Use:']/following::div[1]") %>% html_text()),
                "%B. %d, %Y"
                 )
+  
+  if (is.na(FirstUseDate) && length(FirstUseDate)>0)  {
+    
+    FirstUseDate<-
+      as.Date(gsub("\r\n","",data %>% html_nodes(xpath = "//div[text()='First Use:']/following::div[1]") %>% html_text()),
+              "%B %d, %Y"
+      )
+  }
   
   FirstUseDate<-format(FirstUseDate, "%d.%m.%Y")
   
@@ -384,7 +452,7 @@ USScrap <- function(AppNo) {
     cat(paste("\n","Downloading image...",sep=""))
     imageName<-paste("./logos/", AppNo, ".jpeg", sep ="")
     try(download.file(imageUrl,imageName, mode = 'wb',cacheOK=FALSE), silent = TRUE)
-    
+
     size<-file.info(imageName)$size
     #delete files with problems
     if (size<400)
