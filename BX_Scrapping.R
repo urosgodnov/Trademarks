@@ -1,8 +1,27 @@
+translateNat = function (api_key, text = "", lang = "") 
+{
+  url = "https://translate.yandex.net/api/v1.5/tr.json/translate?"
+  url = paste(url, "key=", api_key, sep = "")
+  if (text != "") {
+    url = paste(url, "&text=", text, sep = "")
+  }
+  if (lang != "") {
+    url = paste(url, "&lang=", lang, sep = "")
+  }
+  url = gsub(pattern = " ", replacement = "%20", x = url)
+  d = RCurl::getURL(url, ssl.verifyhost = 0L, ssl.verifypeer = 0L)
+  d = jsonlite::fromJSON(d)
+  d$code = NULL
+  d
+}
+
 BXScrap <- function(regNo) {
   
   #AppNo <- 1067745
-  #regNo<-0759852
+  #regNo<-0587645
   #Making URL and Reading data
+  api_key<-"trnsl.1.1.20171210T185538Z.2c5e808ac4cefb09.3126bf9f8e6ea8f45076615d7c497b88aaf45014"
+  
   url <-
     paste(
       "https://register.boip.int/bmbonline/search/bynumber/perform.do?markNumber=",
@@ -14,9 +33,9 @@ BXScrap <- function(regNo) {
   
   data <- url %>% read_html()
   
-  data %>% html_nodes(xpath = "//h3") %>%
-    html_text()
-  
+  # data %>% html_nodes(xpath = "//h3") %>%
+  #   html_text()
+  # 
   threeThings <-
     data %>% html_node(xpath = "//h3[text()='Nummer en dagtekening (dag en uur) van het depot']/following::p[1]") %>%
     html_text()
@@ -123,15 +142,38 @@ BXScrap <- function(regNo) {
   } else {kind<- "Word"}
   
   status <-
-    gsub(
-      "\n",
-      "",
       data %>% html_node(xpath = "//h3[text()='Status']/following::p[1]") %>% html_text()
-    )
+  status<-gsub("\n","",status)
   
-
+  status<-trimws(status)
   
-
+  status<-gsub("é","e",status)
+  status<-gsub("ë","e",status)
+ 
+  if (status=="Merk vervallenAncienniteit ingeroepen") {
+    
+    status<-"Trademark expired, Seniority invoked"
+  
+  } else if (status=="Merk vervallen") {
+    
+    status<-"Trademark expired"
+    
+  } else if (status=="Merk ingeschreven")
+  {
+    status<-"Trademark registered"
+    
+  } else if(status=="Marque enregistree"){
+    
+    status<-"Trademark registered"
+    
+  } else if (status=="Merk ingeschrevenAncienniteit ingeroepen") {
+    
+    status<-"Trademark registered, Seniority invoked"
+  }
+ 
+  transdata<-translateNat(api_key,text=status,lang="en")
+  status <-transdata[[2]]
+  
   
   #words
   words <-
@@ -146,7 +188,7 @@ BXScrap <- function(regNo) {
     
     words<-NA
     
-  }
+  } 
   
   
   ######Classes
@@ -179,23 +221,27 @@ BXScrap <- function(regNo) {
   {
     currentClassNumber <- classes[[1]][[i]]
     
-    currentClassDesc <-
-     str_sub(currentClassNumber,8)
+    textTotrans<-str_sub(currentClassNumber,7)
+    transdata<-translateNat(api_key,text=textTotrans,lang="en")
+    currentClassDesc <-transdata[[2]]
     
     tmpDF[, i] <- as.numeric(gsub("\\D+","",str_sub(currentClassNumber,1,7)))
     
     tmpDF[, i + 9] <- currentClassDesc
     
   }
-  
+
   
   ###Dealing with images
   imageUrl <-
     data %>% html_nodes(xpath = "//h3[text()='Afbeelding van het beeldmerk']/following::p[1]//@src") %>% html_text()
 
+  
   if (length(imageUrl) == 1 && !is.na(imageUrl)) {
+    imageUrl<-paste("https://register.boip.int/",imageUrl,sep="")
     cat(paste("\n","Downloading image...",sep=""))
-    imageName<-paste("./logos/", AppNo, ".jpeg", sep ="")
+    ext<-str_sub(imageUrl,-3,-1)
+    imageName<-paste("./logos/", AppNo, ".",ext, sep ="")
     try(download.file(imageUrl,imageName, mode = 'wb',cacheOK=FALSE), silent = TRUE)
   } else {imageUrl<-NA}
   

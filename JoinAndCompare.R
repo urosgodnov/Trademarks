@@ -109,13 +109,18 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
     
     #Read registration number
     RegNum<-RegNumList[[i]]
+    
 
-    #RegNum<-"1628688"
+
+    #RegNum<-"1067746"
     imagFile<-paste("./logos/",RegNum,".jpeg",sep="")
     if (!file.exists(imagFile)) {
       imagFile<-paste("./logos/",RegNum,".jpg",sep="")
       if (!file.exists(imagFile)) {
         imagFile<-paste("./logos/",RegNum,".png",sep="")
+        if (!file.exists(imagFile)) {
+          imagFile<-paste("./logos/",RegNum,".gif",sep="")
+        }
       }
     }
     #imagFile1<-paste("./logos/",RegNum,".gif",sep="")
@@ -134,7 +139,7 @@ createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 
       
       
-      try(addPicture(imagFile, sheet, scale=0.3,startRow =startRow+3*i, startColumn =startColumn+9 ))
+      try(addPicture(imagFile, sheet, scale=0.4,startRow =startRow+3*i, startColumn =startColumn+9 ))
       
     # }
   }
