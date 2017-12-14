@@ -44,8 +44,9 @@ for (i in 1:length(current)) {
   dffront<-cbind(dffront,dftemp)
   
 }
-  
-dffront$BASICGS<-gsub(",","",dffront$BASICGS)
+  if (length(trimws(dffront$BASICGS))==1) {
+      dffront$BASICGS<-gsub(",","",dffront$BASICGS)
+  }
 
 results0<-list()
 results1<-list()
@@ -142,6 +143,8 @@ fileson <- list.files(path = "./WipoZips/",
                       pattern = "*.xml",
                       full.names = FALSE)
 
+#fileson<-c(fileson[1:10],"182040.xml")
+
 tmp<-lapply(fileson, function(x) {
   
   x<-paste("./WipoZips/",x,sep="")
@@ -169,17 +172,32 @@ for (i in 1:length(listNames)){
   
 }
 
-#adding webtms recordid
+
+# setting reference list
 recordID<-read_xlsx("WebTMSReferenceList.xlsx")
-recordID$RegNo2<-as.character(recordID$RegNo2)
-recordID<-recordID[recordID$RegNo2!="NA",]
-recordID$RegNo2<-trimws(recordID$RegNo2)
-recordID$RegNo2<-gsub("^[^0-9]*","", recordID$RegNo2)
-front$`International Registration Number`<-as.character(front$`International Registration Number`)
+recordID$RegNo<-as.character(recordID$RegNo)
+recordID<-recordID[recordID$RegNo!="NA",]
+recordID$RegNo<-trimws(recordID$RegNo)
+recordID$CC<-trimws(recordID$CC)
+recordID$RegNo<-gsub("^[^0-9]*","", recordID$RegNo)
 
-front<-left_join(front,recordID, by=c("International Registration Number"="RegNo2"))
+#parent record
 
-before<-front%>%select(-INTREGD,-`Basic registration details`)%>%
+
+parent<-front%>%select(-INTREGD,-`Basic registration details`)%>%
+  mutate(Designations=paste(ifelse(is.na(`Designations under the Protocol by virtue of Article 9sexies`),"",
+                                   `Designations under the Protocol by virtue of Article 9sexies`),
+                            ifelse(is.na(`Designations under the Protocol`),"",
+                                   `Designations under the Protocol`),
+                            ifelse(is.na(`Designations under the Agreement`),"",
+                                   `Designations under the Agreement`), sep=","))%>%
+  mutate(Designations=gsub(",,",",",Designations))%>%
+select(-`Designations under the Protocol by virtue of Article 9sexies`,
+       -`Designations under the Protocol`,
+       -`Designations under the Agreement`)%>%mutate(Parent_Child="Parent")
+
+#child recordid
+child<-front%>%select(-INTREGD,-`Basic registration details`)%>%
   mutate(Designations=paste(ifelse(is.na(`Designations under the Protocol by virtue of Article 9sexies`),"",
                                    `Designations under the Protocol by virtue of Article 9sexies`),
                             ifelse(is.na(`Designations under the Protocol`),"",
@@ -190,14 +208,36 @@ before<-front%>%select(-INTREGD,-`Basic registration details`)%>%
   unnest(Designations)%>%select(-`Designations under the Protocol by virtue of Article 9sexies`,
                                 -`Designations under the Protocol`,
                                 -`Designations under the Agreement`)%>% 
-  select(-RegNo,-RegNo1)%>%filter(Designations!="")
+  mutate(Parent_Child="Child")
 
-before<-before[,c(1:2,27,28,29,3:26)]
 
-before$Designations<-trimws(before$Designations)
 
+#Joining parent
+parent$`International Registration Number`<-as.character(parent$`International Registration Number`)
+parent$Designations<-trimws(parent$Designations)
+
+recordIDParent<-recordID%>%filter(CC=="WO")
+parent<-left_join(parent,recordIDParent, by=c("International Registration Number"="RegNo"))%>%
+  select(-CC)
+
+#Joining child                 
+child$`International Registration Number`<-as.character(child$`International Registration Number`)
+child$Designations<-trimws(child$Designations)
+
+child<-left_join(child,recordID, by=c("International Registration Number"="RegNo","Designations"="CC"))
+
+                  
+allWipo<-rbind(parent,child)
+
+allWipo<-allWipo[,c(1:2,41,28,29,30,27,3:26)]
+
+allWipo$Designations<-trimws(allWipo$Designations)
+allWipo<-allWipo%>% arrange(`International Registration Number`,desc(Parent_Child))%>%
+  filter(Designations!="")
+
+allWipo[is.na(allWipo)]<-""
 options(java.parameters = "-Xmx2024m")
 
-write.csv(before,file="Preliminary.csv")
+write.csv(allWipo,file="Preliminary.csv")
 #write.xlsx2(before,file="Preliminary.xlsx",sheetName = "Data")
 
