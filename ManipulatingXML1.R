@@ -4,13 +4,26 @@ colNames<-read_excel(path="colnames.xlsx")
 
 Page<-function(file) {
 
-  #file <- "./WipoZips/903889.xml"
+  #file <- "./WipoZips/135074.xml"
   
-xmlDoc <- xmlParse(file)
+xmlDoc <- xmlParse(file, encoding="ISO-8859-1")
   
 rootNode <- xmlRoot(xmlDoc)
 
 current<-xmlSApply(rootNode[[1]],function(x) xmlSApply(x, xmlValue))
+
+for (i in 1:length(current$BASICGS)) {
+  
+  if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMEN", xmlValue))>0) {
+  current$BASICGS[[i]]<-xpathSApply(rootNode[[1]], "//CURRENT//GSTERMEN", xmlValue)[i]
+  } else {
+    
+    current$BASICGS[[i]]<-""
+  }
+}
+
+
+
 
 ####Front page
 dffront<-data.frame (INTREGN=  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "INTREGN" ), 
@@ -32,6 +45,7 @@ for (i in 1:length(current)) {
   
 }
   
+dffront$BASICGS<-gsub(",","",dffront$BASICGS)
 
 results0<-list()
 results1<-list()
@@ -157,13 +171,13 @@ for (i in 1:length(listNames)){
 
 #adding webtms recordid
 recordID<-read_xlsx("WebTMSReferenceList.xlsx")
-recordID$`REGISTRATION NO`<-as.character(recordID$`REGISTRATION NO`)
-recordID<-recordID[recordID$CC=="WO" & recordID$`REGISTRATION NO`!="NA",]
-recordID$`REGISTRATION NO`<-trimws(recordID$`REGISTRATION NO`)
-recordID$`REGISTRATION NO`<-gsub("^[^0-9]*","", recordID$`REGISTRATION NO`)
+recordID$RegNo2<-as.character(recordID$RegNo2)
+recordID<-recordID[recordID$RegNo2!="NA",]
+recordID$RegNo2<-trimws(recordID$RegNo2)
+recordID$RegNo2<-gsub("^[^0-9]*","", recordID$RegNo2)
 front$`International Registration Number`<-as.character(front$`International Registration Number`)
 
-front<-left_join(front,recordID, by=c("International Registration Number"="REGISTRATION NO"))
+front<-left_join(front,recordID, by=c("International Registration Number"="RegNo2"))
 
 before<-front%>%select(-INTREGD,-`Basic registration details`)%>%
   mutate(Designations=paste(ifelse(is.na(`Designations under the Protocol by virtue of Article 9sexies`),"",
@@ -176,8 +190,7 @@ before<-front%>%select(-INTREGD,-`Basic registration details`)%>%
   unnest(Designations)%>%select(-`Designations under the Protocol by virtue of Article 9sexies`,
                                 -`Designations under the Protocol`,
                                 -`Designations under the Agreement`)%>% 
-  dplyr::rename(RecordIDWTM=`RECORD ID`)%>% 
-  select(-CC,-Active)%>%filter(Designations!="")
+  select(-RegNo,-RegNo1)%>%filter(Designations!="")
 
 before<-before[,c(1:2,27,28,29,3:26)]
 
