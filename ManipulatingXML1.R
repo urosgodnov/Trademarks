@@ -4,10 +4,10 @@ colNames<-read_excel(path="colnames.xlsx")
 
 Page<-function(file) {
 
-  #file <- "./WipoZips/135074.xml"
+  #file <- "./WipoZips/409576.xml"
   
-xmlDoc <- xmlParse(file, encoding="ISO-8859-1")
-  
+xmlDoc <- xmlParse(file)
+
 rootNode <- xmlRoot(xmlDoc)
 
 current<-xmlSApply(rootNode[[1]],function(x) xmlSApply(x, xmlValue))
@@ -16,10 +16,21 @@ for (i in 1:length(current$BASICGS)) {
   
   if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMEN", xmlValue))>0) {
   current$BASICGS[[i]]<-xpathSApply(rootNode[[1]], "//CURRENT//GSTERMEN", xmlValue)[i]
-  } else {
+  } else if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMFR", xmlValue))>0)
+  {
+    current$BASICGS[[i]]<-xpathSApply(rootNode[[1]], "//CURRENT//GSTERMFR", xmlValue)[i]
     
+  } else if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMES", xmlValue))>0)
+  {
+    current$BASICGS[[i]]<-xpathSApply(rootNode[[1]], "//CURRENT//GSTERMES", xmlValue)[i]
+    
+  }
+  
+  else {
     current$BASICGS[[i]]<-""
   }
+  
+  Encoding(current$BASICGS[[i]]) <- "UTF-8" 
 }
 
 
@@ -143,7 +154,8 @@ fileson <- list.files(path = "./WipoZips/",
                       pattern = "*.xml",
                       full.names = FALSE)
 
-#fileson<-c(fileson[1:10],"182040.xml")
+
+#fileson<-c(fileson[1:50],"182040.xml")
 
 tmp<-lapply(fileson, function(x) {
   
@@ -174,17 +186,17 @@ for (i in 1:length(listNames)){
 
 
 # setting reference list
-recordID<-read_xlsx("WebTMSReferenceList.xlsx")
+recordID<-read_excel("WebTMSReferenceList.xlsx")
 recordID$RegNo<-as.character(recordID$RegNo)
 recordID<-recordID[recordID$RegNo!="NA",]
 recordID$RegNo<-trimws(recordID$RegNo)
 recordID$CC<-trimws(recordID$CC)
 recordID$RegNo<-gsub("^[^0-9]*","", recordID$RegNo)
-
+recordID$RegNo<-gsub(",","", recordID$RegNo)
 #parent record
 
 
-parent<-front%>%select(-INTREGD,-`Basic registration details`)%>%
+parent<-front%>%select(-`Basic registration details`)%>%
   mutate(Designations=paste(ifelse(is.na(`Designations under the Protocol by virtue of Article 9sexies`),"",
                                    `Designations under the Protocol by virtue of Article 9sexies`),
                             ifelse(is.na(`Designations under the Protocol`),"",
@@ -195,6 +207,9 @@ parent<-front%>%select(-INTREGD,-`Basic registration details`)%>%
 select(-`Designations under the Protocol by virtue of Article 9sexies`,
        -`Designations under the Protocol`,
        -`Designations under the Agreement`)%>%mutate(Parent_Child="Parent")
+
+
+parent<-parent[,c(1:3,5:29,4)]
 
 #child recordid
 child<-front%>%select(-INTREGD,-`Basic registration details`)%>%
@@ -208,7 +223,7 @@ child<-front%>%select(-INTREGD,-`Basic registration details`)%>%
   unnest(Designations)%>%select(-`Designations under the Protocol by virtue of Article 9sexies`,
                                 -`Designations under the Protocol`,
                                 -`Designations under the Agreement`)%>% 
-  mutate(Parent_Child="Child")
+  mutate(Parent_Child="Child",INTREGD=NA)
 
 
 
@@ -229,15 +244,51 @@ child<-left_join(child,recordID, by=c("International Registration Number"="RegNo
                   
 allWipo<-rbind(parent,child)
 
-allWipo<-allWipo[,c(1:2,41,28,29,30,27,3:26)]
+allWipo$INTREGD<-format(allWipo$INTREGD,"%d.%m.%Y")
+allWipo$EXPDATE<-format(allWipo$EXPDATE,"%d.%m.%Y")
+
+allWipo<-allWipo[,c(1:2,42,28,30,31,27,29,3:26)]
+
+allWipo<-allWipo%>%select(-`Mark in colour indicator`)
 
 allWipo$Designations<-trimws(allWipo$Designations)
 allWipo<-allWipo%>% arrange(`International Registration Number`,desc(Parent_Child))%>%
   filter(Designations!="")
+allWipo<-allWipo%>%mutate(dolzina=nchar(allWipo$`Basic Goods and services details`))
+
+allWipo$RECORDID<-as.numeric(allWipo$RECORDID)
+
+#checking against verification
+allWipo$InVerification<-NA
+
+verification<-read_excel("verification.xlsx")
+
+notInVer<-anti_join(allWipo, verification, by = c("RECORDID"="recordid"))%>%select(RECORDID)
+InVer<-inner_join(allWipo, verification, by = c("RECORDID"="recordid"))%>%select(RECORDID)
+
+notInVer<-as.data.frame(notInVer[!is.na(notInVer)])%>%filter(!is.na(.))
+colnames(notInVer)<-"RECORDID"
+notInVer$value<-"no"
+
+InVer<-as.data.frame(InVer[!is.na(InVer)])%>%filter(!is.na(.))
+colnames(InVer)<-"RECORDID"
+InVer$value<-"yes"
+
+
+
+
+allWipo[!is.na(match(allWipo$RECORDID,notInVer$RECORDID)),33]<-"no"
+allWipo[!is.na(match(allWipo$RECORDID,InVer$RECORDID)),33]<-"yes"
+
+allWipo<-allWipo[,c(1,2,33,3:32)]
+
+
+
+allWipo<-allWipo %>%
+  mutate_if(is.character, funs(substr(.,1,31999)))%>%select(-dolzina)
 
 allWipo[is.na(allWipo)]<-""
-options(java.parameters = "-Xmx2024m")
 
-write.csv(allWipo,file="Preliminary.csv")
-#write.xlsx2(before,file="Preliminary.xlsx",sheetName = "Data")
+#write.csv(allWipo,file="Preliminary.csv")
+write_xlsx(allWipo,path ="WipoDATA.xlsx")
 

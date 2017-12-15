@@ -1,7 +1,8 @@
 # load libraries
-packages=c("dplyr","XML","rvest","stringr","plyr","xml2","pryr","lubridate","readxl","xlsx","data.table",
+packages=c("dplyr","XML","rvest","stringr","plyr","xml2","pryr","lubridate","readxl","data.table",
            "rowr","jpeg","png","RGtk2","RSelenium","gsubfn","rPython","magick",
-           "openssl","gWidgets2","utils","rowr","caTools","convertGraph","RYandexTranslate","devtools","tidyr")
+           "openssl","gWidgets2","utils","rowr","caTools","convertGraph",
+           "RYandexTranslate","devtools","tidyr","writexl")
 package.check <- lapply(packages, FUN = function(x) {
   if (!require(x, character.only = TRUE)) {
     install.packages(x, dependencies = TRUE)
