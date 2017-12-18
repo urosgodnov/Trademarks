@@ -1,4 +1,19 @@
-
+translateNat = function (api_key, text = "", lang = "") 
+{
+  url = "https://translate.yandex.net/api/v1.5/tr.json/translate?"
+  url = paste(url, "key=", api_key, sep = "")
+  if (text != "") {
+    url = paste(url, "&text=", text, sep = "")
+  }
+  if (lang != "") {
+    url = paste(url, "&lang=", lang, sep = "")
+  }
+  url = gsub(pattern = " ", replacement = "%20", x = url)
+  d = RCurl::getURL(url, ssl.verifyhost = 0L, ssl.verifypeer = 0L)
+  d = jsonlite::fromJSON(d)
+  d$code = NULL
+  d
+}
 
 getStatus <- function(x) {
   if (x == 'Abandonada' ||
@@ -69,7 +84,7 @@ getNamesPattern <- function(text, pattern) {
 }
 
 ARScrap <- function(AppNo) {
-  #AppNo <-1963277
+  #AppNo <-2678954
 
   
   #Making URL and Reading data
@@ -77,6 +92,8 @@ ARScrap <- function(AppNo) {
   AppNo <- gsub(",", "", AppNo)
   AppNo <- gsub("/", "", AppNo)
   AppNo <- gsub(".", "", AppNo, fixed = TRUE)
+  
+  api_key<-"trnsl.1.1.20171210T185538Z.2c5e808ac4cefb09.3126bf9f8e6ea8f45076615d7c497b88aaf45014"
   
   url <-
     paste(
@@ -399,6 +416,25 @@ ARScrap <- function(AppNo) {
       classNo <- NA
     }
     
+    
+    #Using LimDisc to join with description
+    
+    
+    LimDis <-
+      gsub(
+        "\r\n",
+        "",
+        data %>% html_node(xpath = "//strong[contains(.,'Datos de titulares')]/following::tr[1]//td[contains(.,'Limitacion:')]/following::td[1]")
+        %>% html_text()
+      )
+    
+    
+    if (length(LimDis) == 0) {
+      LimDis <- ""
+    }
+    
+    LimDis <- str_trim(gsub("-", "", LimDis))
+    
     classDes <-
       gsub(
         "\r\n",
@@ -417,25 +453,21 @@ ARScrap <- function(AppNo) {
     
     tmpDF$class1 <- classNo
     
-    tmpDF$description1 <- classDes
+    classDes <- paste(classDes,LimDis,sep=" ")
+    classDes<-gsub(";","\\.",classDes)
+    
+    transdata<-translateNat(api_key,text=classDes,lang="en")
+    
+    tmpDF$description1 <-transdata[[2]]
+    
+    
+   
     
     
     
-    
-    LimDis <-
-      gsub(
-        "\r\n",
-        "",
-        data %>% html_node(xpath = "//strong[contains(.,'Datos de titulares')]/following::tr[1]//td[contains(.,'Limitacion:')]/following::td[1]")
-        %>% html_text()
-      )
-    
-    
-    if (length(LimDis) == 0) {
-      LimDis <- NA
-    }
-    
-    LimDis <- str_trim(gsub("-", "", LimDis))
+
+    LimDis <- NA
+
     
     words <- NA
     
@@ -451,6 +483,11 @@ ARScrap <- function(AppNo) {
       html_text()
     
     status <- getStatus(status)
+    
+    
+    
+    if (renewal<format(today(),"%d.%m.%Y"))
+    {status<-"INACTIVE"}
     
     kind <-
       data %>% html_node(xpath = "//tr//div[contains(.,'Direccion de Marcas')]/following::tr[2]//td[span/text()='Tipo Marca :']") %>%

@@ -181,7 +181,6 @@ downloadData <- function(Country,
   write.xlsx2(
     dataTmp,
     file = filename,
-    sheetName  =  "verification",
     row.names = FALSE
   )
   
