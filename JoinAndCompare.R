@@ -1,3 +1,4 @@
+createExcel<- function(allData,Country,startRow=3,startColumn=1) {
 insert(outputConsole,"Started creating excel...")
 
 errors<-allData[allData$Eval==0,-ncol(allData)]
@@ -156,35 +157,35 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
   localTime <- Sys.getlocale("LC_TIME")
 
   #local time to Australiaan
-  Sys.setlocale("LC_TIME", "German")
-
-   #   path<-"./Inputdata/China.xlsx"
-   #   Country<-"China"
-   #  # #  # #
-   #  # # ##destinationFile<-read_excel(path=path, skip=1)
-   #  # # # #
-   #     source<-read_excel(path=path, skip=1)
-   #  # # # #Selecting all rows with recordID
-   #   recordID<-source%>%filter(grepl("Record",Trademark))%>%dplyr::rename(Record_ID=Trademark)%>%
-   #    select(Record_ID)
-   #  # # #
-   #     recordID<-recordID[rep(seq_len(nrow(recordID)), each=3),"Record_ID"]
-   #  # # #
-   #     source<-cbind(recordID,source)
-   #  # # #
-   #    source$Record_ID<-gsub("Record ID:","",source$Record_ID)
-   #  # # #
-   #     source<-source%>%filter(!grepl("Record",Trademark))
-   # 
-   #     source$`Application no.` <- gsub("/", "", source$`Application no.`)
-   #     source$`Application no.` <- gsub(",", "", source$`Application no.`)
-   #  # # #
-   # destinationFile<-source
-   #  # # #
-   # path<-"./data/China.xlsx"
-   # 
-   # # print(path)
-   #  verificationFile<-as.data.frame(read_excel(path=path))
+  # Sys.setlocale("LC_TIME", "German")
+  # 
+  #    path<-"./Inputdata/AR.xlsx"
+  #    Country<-"Argentina"
+  #   # #  # #
+  #   # # ##destinationFile<-read_excel(path=path, skip=1)
+  #   # # # #
+  #      source<-read_excel(path=path, skip=1)
+  #   # # # #Selecting all rows with recordID
+  #    recordID<-source%>%filter(grepl("Record",Trademark))%>%dplyr::rename(Record_ID=Trademark)%>%
+  #     select(Record_ID)
+  #   # # #
+  #      recordID<-recordID[rep(seq_len(nrow(recordID)), each=3),"Record_ID"]
+  #   # # #
+  #      source<-cbind(recordID,source)
+  #   # # #
+  #     source$Record_ID<-gsub("Record ID:","",source$Record_ID)
+  #   # # #
+  #      source<-source%>%filter(!grepl("Record",Trademark))
+  # 
+  #      source$`Application no.` <- gsub("/", "", source$`Application no.`)
+  #      source$`Application no.` <- gsub(",", "", source$`Application no.`)
+  #   # # #
+  #  destinationFile<-source
+  #   # # #
+  #  path<-"./data/Argentina_online.xlsx"
+  # 
+  #  # print(path)
+  #   verificationFile<-as.data.frame(read_excel(path=path))
    # # #names(verificationFile)<-tolower(names(verificationFile))
 
   
