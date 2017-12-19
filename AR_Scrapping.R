@@ -84,7 +84,7 @@ getNamesPattern <- function(text, pattern) {
 }
 
 ARScrap <- function(AppNo) {
-  #AppNo <-2678954
+  #AppNo <-2733088
 
   
   #Making URL and Reading data
@@ -486,7 +486,7 @@ ARScrap <- function(AppNo) {
     
     
     
-    if (renewal<format(today(),"%d.%m.%Y"))
+    if (as.Date(renewal,"%d.%m.%Y")<today())
     {status<-"INACTIVE"}
     
     kind <-
