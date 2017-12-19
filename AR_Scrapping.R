@@ -84,7 +84,7 @@ getNamesPattern <- function(text, pattern) {
 }
 
 ARScrap <- function(AppNo) {
-  #AppNo <-2733088
+  #AppNo <-1845178
 
   
   #Making URL and Reading data

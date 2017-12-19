@@ -100,6 +100,16 @@ downloadData <- function(Country,
     {
       try(scrapData <- BXScrap(appNumber), silent = FALSE)
       
+    }else if (Country == "UK") 
+    {
+      localSys <- Sys.getlocale("LC_ALL")
+      
+      Sys.setlocale("LC_ALL", "english")
+      
+      try(scrapData <- UKScrap(appNumber), silent = FALSE)
+      
+      Sys.setlocale("LC_ALL", localSys)
+      
     }
     
     if (exists("scrapData") && nrow(scrapData)==1) {
