@@ -1,5 +1,5 @@
 UKScrap <- function(AppNo) {
-  #AppNo <-1544909
+  #AppNo <-"2119496B"
 
 
 
@@ -12,19 +12,19 @@ UKScrap <- function(AppNo) {
   
   
   url <-
-    paste("https://trademarks.ipo.gov.uk/ipo-tmcase/page/Results/1/UK0000",
-          AppNo,
+    paste("https://trademarks.ipo.gov.uk/ipo-tmcase/page/Results/1/UK",
+          str_pad(AppNo, 11, pad = "0"),
           sep = "")
   
-  data <- try(url %>% read_html(encoding = "utf-8"), silent = TRUE)
+  data <- try(url %>% read_html, silent = TRUE)
   
   AppNo <-
-    gsub(
-      "UK0000",
+    gsub("(?<![0-9])0+","",gsub(
+      "UK",
       "",
       data %>% html_nodes(xpath = "//dt[text()='Trade mark number']/following::h1[1]") %>%
         html_text()
-    )
+    ), perl = TRUE)
   
   if (length(AppNo)==0) {
     AppNo<-NA
@@ -244,7 +244,14 @@ UKScrap <- function(AppNo) {
     status <- NA
   }
   
-  LimDis <- NA
+  LimDis <-
+    data %>% html_nodes(xpath = "//dt[text()='Disclaimer']/following::dd[1]") %>%
+    html_text()
+  
+  
+  if (length(LimDis) == 0) {
+    LimDis <- NA
+  }
   
   
   words <- NA
