@@ -4,7 +4,7 @@ colNames<-read_excel(path="colnames.xlsx")
 
 Page<-function(file) {
 
-  #file <- "./WipoZips/409576.xml"
+  #file <- "./WipoZips/1002998.xml"
   
 xmlDoc <- xmlParse(file)
 
@@ -30,6 +30,7 @@ for (i in 1:length(current$BASICGS)) {
     current$BASICGS[[i]]<-""
   }
   
+
   Encoding(current$BASICGS[[i]]) <- "UTF-8" 
 }
 
@@ -42,7 +43,8 @@ dffront<-data.frame (INTREGN=  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "IN
             OOCD =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "OOCD"),
             INTREGD =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "INTREGD"),
             EXPDATE =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "EXPDATE"),
-            ORIGLAN =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "ORIGLAN")
+            ORIGLAN =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "ORIGLAN"),
+            CLASSNO =  xpathSApply(rootNode[[1]], "//CURRENT//GSGR", xmlGetAttr, "NICCLAI")
 )
 
 regNumber<-dffront$INTREGN
@@ -55,7 +57,7 @@ for (i in 1:length(current)) {
   dffront<-cbind(dffront,dftemp)
   
 }
-  if (length(trimws(dffront$BASICGS))==1) {
+  if (nchar(trimws(dffront$BASICGS))==1) {
       dffront$BASICGS<-gsub(",","",dffront$BASICGS)
   }
 
@@ -209,7 +211,7 @@ select(-`Designations under the Protocol by virtue of Article 9sexies`,
        -`Designations under the Agreement`)%>%mutate(Parent_Child="Parent")
 
 
-parent<-parent[,c(1:3,5:29,4)]
+parent<-parent[,c(1:3,5:30,4)]
 
 #child recordid
 child<-front%>%select(-INTREGD,-`Basic registration details`)%>%
@@ -247,7 +249,7 @@ allWipo<-rbind(parent,child)
 allWipo$INTREGD<-format(allWipo$INTREGD,"%d.%m.%Y")
 allWipo$EXPDATE<-format(allWipo$EXPDATE,"%d.%m.%Y")
 
-allWipo<-allWipo[,c(1:2,42,28,30,31,27,29,3:26)]
+allWipo<-allWipo[,c(1:2,43,29,31,32,28,30,3:27)]
 
 allWipo<-allWipo%>%select(-`Mark in colour indicator`)
 
@@ -277,10 +279,10 @@ InVer$value<-"yes"
 
 
 
-allWipo[!is.na(match(allWipo$RECORDID,notInVer$RECORDID)),33]<-"no"
-allWipo[!is.na(match(allWipo$RECORDID,InVer$RECORDID)),33]<-"yes"
+allWipo[!is.na(match(allWipo$RECORDID,notInVer$RECORDID)),34]<-"no"
+allWipo[!is.na(match(allWipo$RECORDID,InVer$RECORDID)),34]<-"yes"
 
-allWipo<-allWipo[,c(1,2,33,3:32)]
+allWipo<-allWipo[,c(1,2,34,3:33)]
 
 
 
@@ -288,7 +290,7 @@ allWipo<-allWipo %>%
   mutate_if(is.character, funs(substr(.,1,31999)))%>%select(-dolzina)
 
 allWipo[is.na(allWipo)]<-""
-
+allWipo<-allWipo[,c(1:12,14:19,13,20:33)]
 #write.csv(allWipo,file="Preliminary.csv")
 write_xlsx(allWipo,path ="WipoDATA.xlsx")
 
