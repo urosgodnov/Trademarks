@@ -4,7 +4,7 @@ colNames<-read_excel(path="colnames.xlsx")
 
 Page<-function(file) {
 
-  #file <- "./WipoZips/1002998.xml"
+  #file <- "./WipoZips/1027111.xml"
   
 xmlDoc <- xmlParse(file)
 
@@ -43,11 +43,11 @@ dffront<-data.frame (INTREGN=  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "IN
             OOCD =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "OOCD"),
             INTREGD =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "INTREGD"),
             EXPDATE =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "EXPDATE"),
-            ORIGLAN =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "ORIGLAN"),
-            CLASSNO =  xpathSApply(rootNode[[1]], "//CURRENT//GSGR", xmlGetAttr, "NICCLAI")
+            ORIGLAN =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "ORIGLAN")
 )
 
 regNumber<-dffront$INTREGN
+CLASSNO <-  paste(xpathSApply(rootNode[[1]], "//CURRENT//GSGR", xmlGetAttr, "NICCLAI"),collapse = ",")
 
 for (i in 1:length(current)) {
   
@@ -140,6 +140,7 @@ AllNodesDF<-do.call(rbind.fill, results0)
 colNames <- c('INTREGD','EXPDATE')
 
 dffront[colNames] <- lapply( dffront[colNames], as.Date, "%Y%m%d" )
+dffront$CLASSNO<-CLASSNO
 
 colNames <- c("REGRDAT","NOTDATE","REGEDAT","PUBDATE")
 
@@ -284,13 +285,20 @@ allWipo[!is.na(match(allWipo$RECORDID,InVer$RECORDID)),34]<-"yes"
 
 allWipo<-allWipo[,c(1,2,34,3:33)]
 
+#Updating empty trademarks names
+TMNames<-read_excel("MissingRecordIDList.xlsx")
+TMNames$`International Registration Number`<-as.character(TMNames$`International Registration Number`)
 
+allWipo<-allWipo %>%
+  left_join(TMNames, by = "International Registration Number") %>%
+  mutate(TRADEMARK = ifelse(is.na(TRADEMARK.x), TRADEMARK.y,TRADEMARK.x)) %>%
+  select(-TRADEMARK.x, -TRADEMARK.y)
 
 allWipo<-allWipo %>%
   mutate_if(is.character, funs(substr(.,1,31999)))%>%select(-dolzina)
 
 allWipo[is.na(allWipo)]<-""
-allWipo<-allWipo[,c(1:12,14:19,13,20:33)]
+allWipo<-allWipo[,c(1:6,33,7:11,20,18,13:17,19,21:32)]
 #write.csv(allWipo,file="Preliminary.csv")
 write_xlsx(allWipo,path ="WipoDATA.xlsx")
 
