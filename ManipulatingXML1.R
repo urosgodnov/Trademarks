@@ -1,153 +1,292 @@
 library(xml2)
 library(tidyr)
-colNames<-read_excel(path="colnames.xlsx")
+colNames <- read_excel(path = "colnames.xlsx")
 
-Page<-function(file) {
-
-  #file <- "./WipoZips/1027111.xml"
+Page <- function(file) {
+  #file <- "./WipoZips/167102.xml"
   
-xmlDoc <- xmlParse(file)
-
-rootNode <- xmlRoot(xmlDoc)
-
-current<-xmlSApply(rootNode[[1]],function(x) xmlSApply(x, xmlValue))
-
-for (i in 1:length(current$BASICGS)) {
+  xmlDoc <- xmlParse(file)
   
-  if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMEN", xmlValue))>0) {
-  current$BASICGS[[i]]<-xpathSApply(rootNode[[1]], "//CURRENT//GSTERMEN", xmlValue)[i]
-  } else if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMFR", xmlValue))>0)
-  {
-    current$BASICGS[[i]]<-xpathSApply(rootNode[[1]], "//CURRENT//GSTERMFR", xmlValue)[i]
-    
-  } else if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMES", xmlValue))>0)
-  {
-    current$BASICGS[[i]]<-xpathSApply(rootNode[[1]], "//CURRENT//GSTERMES", xmlValue)[i]
-    
-  }
+  rootNode <- xmlRoot(xmlDoc)
   
-  else {
-    current$BASICGS[[i]]<-""
-  }
+  current <- xmlSApply(rootNode[[1]], function(x)
+    xmlSApply(x, xmlValue))
   
-
-  Encoding(current$BASICGS[[i]]) <- "UTF-8" 
-}
-
-
-
-
-####Front page
-dffront<-data.frame (INTREGN=  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "INTREGN" ), 
-            BILING =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "BILING"),
-            OOCD =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "OOCD"),
-            INTREGD =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "INTREGD"),
-            EXPDATE =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "EXPDATE"),
-            ORIGLAN =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "ORIGLAN")
-)
-
-regNumber<-dffront$INTREGN
-CLASSNO <-  paste(xpathSApply(rootNode[[1]], "//CURRENT//GSGR", xmlGetAttr, "NICCLAI"),collapse = ",")
-
-for (i in 1:length(current)) {
-  
-  #i=1
-  dftemp<-as.data.frame(gsub("\n","",paste(as.vector(current[[i]]),collapse=", ")), stringsAsFactors = FALSE)
-  colnames(dftemp)<-names(current[i])
-  dffront<-cbind(dffront,dftemp)
-  
-}
-  if (nchar(trimws(dffront$BASICGS))==1) {
-      dffront$BASICGS<-gsub(",","",dffront$BASICGS)
-  }
-
-results0<-list()
-results1<-list()
-####Otherpages
-for (i in 2:xmlSize(rootNode)) {
-  
- #i=33
-  if (xmlSize(rootNode[[i]])==0) {
-  
- 
-  nodesDF<-as.data.frame(xmlAttrs(rootNode[[i]]))
-  
-  #Adding regNo and What
-  
-  what<-xmlName(rootNode[[i]])
-  what<-colNames[colNames$Short==what,2]
-  
-  if (what=="character(0)") {
-    what<-xmlName(rootNode[[i]])
-  }
-  
-  tmpRandW<-data.frame(regNumber,what, stringsAsFactors = FALSE)
-  
-  colnames(tmpRandW)<-c("RegNo","Task")
-  #Rows to columns
-  nodesDF<-data.frame(t(nodesDF), row.names = NULL)
-  
-  #cbind
-  results0[[i]]<-cbind(tmpRandW,nodesDF)
-  
-  } else {
-    
-    current<-xmlSApply(rootNode[[i]],function(x) xmlSApply(x, xmlValue))
-    
-    if (!is.null(xmlAttrs(rootNode[[i]]))) {
-    nodesDF<-as.data.frame(xmlAttrs(rootNode[[i]]))
-    #Rows to columns
-    nodesDF<-data.frame(t(nodesDF), row.names = NULL)
-    }
-    #Adding regNo and What
-    
-    what<-xmlName(rootNode[[i]])
-    what<-colNames[colNames$Short==what,2]
-    
-    if (what=="character(0)") {
-      what<-xmlName(rootNode[[i]])
-    }
-    
-    tmpRandW<-data.frame(regNumber,what, stringsAsFactors = FALSE)
-    
-    colnames(tmpRandW)<-c("RegNo","Task")
-
-    
-    #cbind
-    if (length(nodesDF)>0) {
-    preDF<-cbind(tmpRandW,nodesDF)
-    } else {preDF<-tmpRandW}
-   
-    for (j in 1:length(current)) {
-     
-      dftemp<-as.data.frame(gsub("\n","",paste(as.vector(current[[j]]),collapse=", ")), stringsAsFactors = FALSE)
-      colnames(dftemp)<-names(current[j])
-
-      preDF<-cbind(preDF,dftemp)
+  for (i in 1:length(current$BASICGS)) {
+    if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMEN", xmlValue)) >
+        0) {
+      current$BASICGS[[i]] <-
+        xpathSApply(rootNode[[1]], "//CURRENT//GSTERMEN", xmlValue)[i]
+    } else if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMFR", xmlValue)) >
+               0)
+    {
+      current$BASICGS[[i]] <-
+        xpathSApply(rootNode[[1]], "//CURRENT//GSTERMFR", xmlValue)[i]
+      
+    } else if (length(xpathSApply(rootNode[[1]], "//CURRENT//GSTERMES", xmlValue)) >
+               0)
+    {
+      current$BASICGS[[i]] <-
+        xpathSApply(rootNode[[1]], "//CURRENT//GSTERMES", xmlValue)[i]
       
     }
     
-    results0[[i]]<-preDF
+    else {
+      current$BASICGS[[i]] <- ""
+    }
+    
+    
+    Encoding(current$BASICGS[[i]]) <- "UTF-8"
+  }
+  
+  
+  
+  
+  ####Front page
+  dffront <-
+    data.frame (
+      INTREGN =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "INTREGN"),
+      BILING =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "BILING"),
+      OOCD =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "OOCD"),
+      INTREGD =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "INTREGD"),
+      EXPDATE =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "EXPDATE"),
+      ORIGLAN =  xpathSApply(rootNode, "//MARKGR", xmlGetAttr, "ORIGLAN")
+    )
+  
+  regNumber <- dffront$INTREGN
+  CLASSNO <-
+    paste(xpathSApply(rootNode[[1]], "//CURRENT//GSGR", xmlGetAttr, "NICCLAI"),
+          collapse = "|")
+  CLASSDESC <- paste(current$BASICGS, collapse = "|")
+  
+  for (i in 1:length(current)) {
+    #i=11
+    dftemp <-
+      as.data.frame(gsub("\n", "", paste(as.vector(current[[i]]), collapse = ", ")), stringsAsFactors = FALSE)
+    colnames(dftemp) <- names(current[i])
+    dffront <- cbind(dffront, dftemp)
     
   }
-
- 
-
-}
-
-AllNodesDF<-do.call(rbind.fill, results0)
-#changing datatype
-colNames <- c('INTREGD','EXPDATE')
-
-dffront[colNames] <- lapply( dffront[colNames], as.Date, "%Y%m%d" )
-dffront$CLASSNO<-CLASSNO
-
-colNames <- c("REGRDAT","NOTDATE","REGEDAT","PUBDATE")
-
-AllNodesDF[colNames] <- lapply( AllNodesDF[colNames], as.Date, "%Y%m%d" )
-
-return(list(dffront,AllNodesDF))
-
+  
+  
+  results0 <- list()
+  results1 <- list()
+  ####Otherpages
+  for (i in 2:xmlSize(rootNode)) {
+    #i=6
+    
+    # print(paste("Začetek ",i,sep=""))
+    
+    if (xmlSize(rootNode[[i]]) == 0) {
+      nodesDF <- as.data.frame(xmlAttrs(rootNode[[i]]))
+      
+      #Adding regNo and What
+      
+      what <- xmlName(rootNode[[i]])
+      what <- colNames[colNames$Short == what, 2]
+      
+      if (what == "character(0)") {
+        what <- xmlName(rootNode[[i]])
+      }
+      
+      tmpRandW <-
+        data.frame(regNumber, what, stringsAsFactors = FALSE)
+      
+      colnames(tmpRandW) <- c("RegNo", "Task")
+      #Rows to columns
+      nodesDF <- data.frame(t(nodesDF), row.names = NULL)
+      
+      #cbind
+      results0[[i]] <- cbind(tmpRandW, nodesDF)
+      
+    } else {
+      #i=3
+      #print(i)
+      # print(paste("Zanka ",i,sep=""))
+      current <-
+        xmlSApply(rootNode[[i]], function(x)
+          xmlSApply(x, xmlValue))
+      
+      if (!is.null(xmlAttrs(rootNode[[i]]))) {
+        nodesDF <- as.data.frame(xmlAttrs(rootNode[[i]]))
+        #Rows to columns
+        nodesDF <- data.frame(t(nodesDF), row.names = NULL)
+      }
+      #Adding regNo and What
+      
+      what <- xmlName(rootNode[[i]])
+      what <- colNames[colNames$Short == what, 2]
+      
+      if (what == "character(0)") {
+        what <- xmlName(rootNode[[i]])
+      }
+      
+      tmpRandW <-
+        data.frame(regNumber, what, stringsAsFactors = FALSE)
+      
+      colnames(tmpRandW) <- c("RegNo", "Task")
+      
+      
+      #cbind
+      if (length(nodesDF) > 0) {
+        preDF <- cbind(tmpRandW, nodesDF)
+      } else {
+        preDF <- tmpRandW
+      }
+      
+      tmpNames <- NA
+      DCPCD <- NA
+      
+      if (class(current) == "matrix") {
+        rown <- as.vector(as.character(nrow(current)))
+        statesDF <-
+          as.data.frame(current,
+                        row.names = rown,
+                        stringsAsFactors = FALSE)
+      } else if (class(current) == "list") {
+        keys <- unique(names(current))
+        current <-
+          sapply(keys, function(name) {
+            unlist(current[grep(name, names(current))])
+          })
+        
+        try(DCPCD <-
+              paste(current$DCPCD, collapse = ","), silent = TRUE)
+        
+        if (length(DCPCD) == 0) {
+          DCPCD <- NA
+        }
+        
+        try(LIMTO <- current$LIMTO[[1]], silent = TRUE)
+        
+        if (length(LIMTO) == 0) {
+          LIMTO <- NA
+        } else if (!is.na(LIMTO)) {
+          Encoding(LIMTO) <- "UTF-8"
+          
+        }
+        
+        current <- lapply(current, `length<-`, max(lengths(current)))
+        
+        rown <- as.vector(as.character(length(current[[1]])))
+        
+        try(statesDF <-
+              as.data.frame(current, stringsAsFactors = FALSE))
+        
+      } else {
+        names <- gsub("\\.text", "", unique(names(current)))
+        names <- gsub("\\.LIMTO", "", unique(names(current)))
+        names <- gsub("\\.DCPCD", "", unique(names(current)))
+        if (length(names) == 1) {
+          statesDF <- as.data.frame(current, stringsAsFactors = FALSE)
+          colnames(statesDF) <- names
+        }
+        else {
+          tmpNames <- as.data.frame(paste(current[grep(names[1], names(current))],collapse=","), stringsAsFactors = FALSE)
+          colnames(tmpNames) <- names[1]
+          for (m in 2:length(names)) {
+            tmpNames <-
+              cbind(tmpNames,
+                    as.data.frame(paste(current[grep(names[m], names(current))],collapse=","), stringsAsFactors = FALSE))
+            
+          }
+          
+          colnames(tmpNames) <- names
+          
+          
+        }
+        
+        
+      }
+      
+      if (any(nchar(names(statesDF)) > 25)) {
+        next
+      }
+      
+      statesDF[is.na(statesDF)] <- ""
+      
+      colnames(statesDF) <- gsub("\\.text", "", names(statesDF))
+      
+      if (length(statesDF) > 0 && is.na(DCPCD) && is.na(tmpNames)) {
+        for (j in 1:ncol(statesDF)) {
+          states <- ""
+          
+          for (k in 1:nrow(statesDF)) {
+            states <- c(states, statesDF[k, j])
+            
+          }
+          
+          if (length(states) > 1) {
+            states <- states[-1]
+            states <- paste(states, collapse = ",")
+          }
+          
+          statesDF1 <-
+            as.data.frame(states, stringsAsFactors = FALSE)
+          
+          colnames(statesDF1) <- names(statesDF)[j]
+          
+          preDF <- cbind(preDF, statesDF1)
+          
+        }
+        
+      } else if (!is.na(DCPCD) && !is.na(LIMTO)) {
+        dp <- as.data.frame(list(DCPCD, LIMTO), stringsAsFactors = FALSE)
+        colnames(dp) <- c("DCPCD", "LIMTO")
+        preDF <- cbind(preDF, dp)
+        
+      } else if (!is.na(tmpNames)) {
+        preDF <- cbind(preDF, tmpNames)
+        
+      }
+      
+      results0[[i]] <- preDF
+      
+      
+    }
+    
+    
+    
+  }
+  
+  
+  #changing datatype
+  colNames <- c('INTREGD', 'EXPDATE')
+  
+  dffront[colNames] <- lapply(dffront[colNames], as.Date, "%Y%m%d")
+  
+  if (nchar(trimws(CLASSDESC)) == 1) {
+    CLASSDESC <- gsub(",", "", CLASSDESC)
+  }
+  
+  dffront$CLASSNO <- CLASSNO
+  dffront$BASICGS <- CLASSDESC
+  
+  AllNodesDF <- do.call(rbind.fill, results0)
+  
+  try(AllNodesDF<-AllNodesDF%>%dplyr::rename(PRF=PRF.LIMTO),silent = TRUE)
+  try(AllNodesDF<-AllNodesDF%>%dplyr::rename(DCPCD=DCPCD.text),silent = TRUE)
+  try(AllNodesDF<-AllNodesDF%>%dplyr::rename(LIMTO=`LIMTO.GSTERMFR`),silent = TRUE)
+  
+  where <-
+    sapply(colnames(AllNodesDF), function(x)
+      grep("DE", AllNodesDF[, x]))
+  
+  rows <- as.numeric(unlist(where))
+  AllNodesDF <- AllNodesDF[rows, ]
+  AllNodesDF <- Filter(function(x)
+    ! (all(x == "")), AllNodesDF)
+  
+  if (length(AllNodesDF) > 0)
+  {
+    colNames <- c("REGRDAT", "NOTDATE", "REGEDAT", "PUBDATE")
+    
+    AllNodesDF[colNames] <-
+      lapply(AllNodesDF[colNames], as.Date, "%Y%m%d")
+  }
+  
+  return(list(dffront, AllNodesDF))
+  
 }
 
 
@@ -160,145 +299,263 @@ fileson <- list.files(path = "./WipoZips/",
 
 #fileson<-c(fileson[1:50],"182040.xml")
 
-tmp<-lapply(fileson, function(x) {
-  
-  x<-paste("./WipoZips/",x,sep="")
+tmp <- lapply(fileson, function(x) {
+  x <- paste("./WipoZips/", x, sep = "")
   
   if (file.exists(x))
-  {   
+  {
     print(x)
     return(Page(x))
   }
 })
 
-front<-do.call(rbind.fill, lapply(tmp, `[[`, 1))
+front <- do.call(rbind.fill, lapply(tmp, `[[`, 1))
 
-listNames<-as.list(names(front))
+listNames <- as.list(names(front))
 
-for (i in 1:length(listNames)){
+for (i in 1:length(listNames)) {
+  OldName <- listNames[[i]]
+  NewName <- as.character(colNames[colNames$Short == OldName, 2])
   
-   
-  OldName<-listNames[[i]]
-  NewName<-as.character(colNames[colNames$Short==OldName,2])
-  
-  if (NewName!="character(0)") {
-  names(front)[i]<-NewName
+  if (NewName != "character(0)") {
+    names(front)[i] <- NewName
   }
   
 }
 
 
 # setting reference list
-recordID<-read_excel("WebTMSReferenceList.xlsx")
-recordID$RegNo<-as.character(recordID$RegNo)
-recordID<-recordID[recordID$RegNo!="NA",]
-recordID$RegNo<-trimws(recordID$RegNo)
-recordID$CC<-trimws(recordID$CC)
-recordID$RegNo<-gsub("^[^0-9]*","", recordID$RegNo)
-recordID$RegNo<-gsub(",","", recordID$RegNo)
+recordID <- read_excel("WebTMSReferenceList.xlsx")
+recordID$RegNo <- as.character(recordID$RegNo)
+recordID <- recordID[recordID$RegNo != "NA", ]
+recordID$RegNo <- trimws(recordID$RegNo)
+recordID$CC <- trimws(recordID$CC)
+recordID$RegNo <- gsub("^[^0-9]*", "", recordID$RegNo)
+recordID$RegNo <- gsub(",", "", recordID$RegNo)
 #parent record
 
 
-parent<-front%>%select(-`Basic registration details`)%>%
-  mutate(Designations=paste(ifelse(is.na(`Designations under the Protocol by virtue of Article 9sexies`),"",
-                                   `Designations under the Protocol by virtue of Article 9sexies`),
-                            ifelse(is.na(`Designations under the Protocol`),"",
-                                   `Designations under the Protocol`),
-                            ifelse(is.na(`Designations under the Agreement`),"",
-                                   `Designations under the Agreement`), sep=","))%>%
-  mutate(Designations=gsub(",,",",",Designations))%>%
-select(-`Designations under the Protocol by virtue of Article 9sexies`,
-       -`Designations under the Protocol`,
-       -`Designations under the Agreement`)%>%mutate(Parent_Child="Parent")
+parent <- front %>% select(-`Basic registration details`) %>%
+  mutate(Designations = paste(
+    ifelse(
+      is.na(`Designations under the Protocol by virtue of Article 9sexies`),
+      "",
+      `Designations under the Protocol by virtue of Article 9sexies`
+    ),
+    ifelse(
+      is.na(`Designations under the Protocol`),
+      "",
+      `Designations under the Protocol`
+    ),
+    ifelse(
+      is.na(`Designations under the Agreement`),
+      "",
+      `Designations under the Agreement`
+    ),
+    sep = ","
+  )) %>%
+  mutate(Designations = gsub(",,", ",", Designations)) %>%
+  select(
+    -`Designations under the Protocol by virtue of Article 9sexies`,-`Designations under the Protocol`,-`Designations under the Agreement`
+  ) %>% mutate(Parent_Child = "Parent")
 
 
-parent<-parent[,c(1:3,5:30,4)]
+parent <- parent[, c(1:3, 5:30, 4)]
 
 #child recordid
-child<-front%>%select(-INTREGD,-`Basic registration details`)%>%
-  mutate(Designations=paste(ifelse(is.na(`Designations under the Protocol by virtue of Article 9sexies`),"",
-                                   `Designations under the Protocol by virtue of Article 9sexies`),
-                            ifelse(is.na(`Designations under the Protocol`),"",
-                                   `Designations under the Protocol`),
-                            ifelse(is.na(`Designations under the Agreement`),"",
-                                   `Designations under the Agreement`), sep=","))%>%
+child <-
+  front %>% select(-INTREGD, -`Basic registration details`) %>%
+  mutate(Designations = paste(
+    ifelse(
+      is.na(`Designations under the Protocol by virtue of Article 9sexies`),
+      "",
+      `Designations under the Protocol by virtue of Article 9sexies`
+    ),
+    ifelse(
+      is.na(`Designations under the Protocol`),
+      "",
+      `Designations under the Protocol`
+    ),
+    ifelse(
+      is.na(`Designations under the Agreement`),
+      "",
+      `Designations under the Agreement`
+    ),
+    sep = ","
+  )) %>%
   mutate(Designations = strsplit(as.character(Designations), ",")) %>%
-  unnest(Designations)%>%select(-`Designations under the Protocol by virtue of Article 9sexies`,
-                                -`Designations under the Protocol`,
-                                -`Designations under the Agreement`)%>% 
-  mutate(Parent_Child="Child",INTREGD=NA)
+  unnest(Designations) %>% select(
+    -`Designations under the Protocol by virtue of Article 9sexies`,-`Designations under the Protocol`,-`Designations under the Agreement`
+  ) %>%
+  mutate(Parent_Child = "Child", INTREGD = NA)
 
 
 
 #Joining parent
-parent$`International Registration Number`<-as.character(parent$`International Registration Number`)
-parent$Designations<-trimws(parent$Designations)
+parent$`International Registration Number` <-
+  as.character(parent$`International Registration Number`)
+parent$Designations <- trimws(parent$Designations)
 
-recordIDParent<-recordID%>%filter(CC=="WO")
-parent<-left_join(parent,recordIDParent, by=c("International Registration Number"="RegNo"))%>%
+recordIDParent <- recordID %>% filter(CC == "WO")
+parent <-
+  left_join(parent,
+            recordIDParent,
+            by = c("International Registration Number" = "RegNo")) %>%
   select(-CC)
 
-#Joining child                 
-child$`International Registration Number`<-as.character(child$`International Registration Number`)
-child$Designations<-trimws(child$Designations)
+#Joining child
+child$`International Registration Number` <-
+  as.character(child$`International Registration Number`)
+child$Designations <- trimws(child$Designations)
 
-child<-left_join(child,recordID, by=c("International Registration Number"="RegNo","Designations"="CC"))
+child <-
+  left_join(
+    child,
+    recordID,
+    by = c(
+      "International Registration Number" = "RegNo",
+      "Designations" = "CC"
+    )
+  )
 
-                  
-allWipo<-rbind(parent,child)
 
-allWipo$INTREGD<-format(allWipo$INTREGD,"%d.%m.%Y")
-allWipo$EXPDATE<-format(allWipo$EXPDATE,"%d.%m.%Y")
+allWipo <- rbind(parent, child)
 
-allWipo<-allWipo[,c(1:2,43,29,31,32,28,30,3:27)]
+allWipo$INTREGD <- format(allWipo$INTREGD, "%d.%m.%Y")
+allWipo$EXPDATE <- format(allWipo$EXPDATE, "%d.%m.%Y")
 
-allWipo<-allWipo%>%select(-`Mark in colour indicator`)
+allWipo <- allWipo[, c(1:2, 43, 29, 31, 32, 28, 30, 3:27)]
 
-allWipo$Designations<-trimws(allWipo$Designations)
-allWipo<-allWipo%>% arrange(`International Registration Number`,desc(Parent_Child))%>%
-  filter(Designations!="")
-allWipo<-allWipo%>%mutate(dolzina=nchar(allWipo$`Basic Goods and services details`))
+allWipo <- allWipo %>% select(-`Mark in colour indicator`)
 
-allWipo$RECORDID<-as.numeric(allWipo$RECORDID)
+allWipo$Designations <- trimws(allWipo$Designations)
+allWipo <-
+  allWipo %>% arrange(`International Registration Number`, desc(Parent_Child)) %>%
+  filter(Designations != "")
+allWipo <-
+  allWipo %>% mutate(dolzina = nchar(allWipo$`Basic Goods and services details`))
+
+allWipo$RECORDID <- as.numeric(allWipo$RECORDID)
 
 #checking against verification
-allWipo$InVerification<-NA
+allWipo$InVerification <- NA
 
-verification<-read_excel("verification.xlsx")
+verification <- read_excel("verification.xlsx")
 
-notInVer<-anti_join(allWipo, verification, by = c("RECORDID"="recordid"))%>%select(RECORDID)
-InVer<-inner_join(allWipo, verification, by = c("RECORDID"="recordid"))%>%select(RECORDID)
+notInVer <-
+  anti_join(allWipo, verification, by = c("RECORDID" = "recordid")) %>% select(RECORDID)
+InVer <-
+  inner_join(allWipo, verification, by = c("RECORDID" = "recordid")) %>% select(RECORDID)
 
-notInVer<-as.data.frame(notInVer[!is.na(notInVer)])%>%filter(!is.na(.))
-colnames(notInVer)<-"RECORDID"
-notInVer$value<-"no"
+notInVer <-
+  as.data.frame(notInVer[!is.na(notInVer)]) %>% filter(!is.na(.))
+colnames(notInVer) <- "RECORDID"
+notInVer$value <- "no"
 
-InVer<-as.data.frame(InVer[!is.na(InVer)])%>%filter(!is.na(.))
-colnames(InVer)<-"RECORDID"
-InVer$value<-"yes"
+InVer <- as.data.frame(InVer[!is.na(InVer)]) %>% filter(!is.na(.))
+colnames(InVer) <- "RECORDID"
+InVer$value <- "yes"
 
 
 
 
-allWipo[!is.na(match(allWipo$RECORDID,notInVer$RECORDID)),34]<-"no"
-allWipo[!is.na(match(allWipo$RECORDID,InVer$RECORDID)),34]<-"yes"
+allWipo[!is.na(match(allWipo$RECORDID, notInVer$RECORDID)), 34] <-
+  "no"
+allWipo[!is.na(match(allWipo$RECORDID, InVer$RECORDID)), 34] <-
+  "yes"
 
-allWipo<-allWipo[,c(1,2,34,3:33)]
+
 
 #Updating empty trademarks names
-TMNames<-read_excel("MissingRecordIDList.xlsx")
-TMNames$`International Registration Number`<-as.character(TMNames$`International Registration Number`)
+TMNames <- read_excel("MissingRecordIDList.xlsx")
+TMNames$`International Registration Number` <-
+  as.character(TMNames$`International Registration Number`)
 
-allWipo<-allWipo %>%
+allWipo <- allWipo %>%
   left_join(TMNames, by = "International Registration Number") %>%
-  mutate(TRADEMARK = ifelse(is.na(TRADEMARK.x), TRADEMARK.y,TRADEMARK.x)) %>%
-  select(-TRADEMARK.x, -TRADEMARK.y)
+  mutate(TRADEMARK = ifelse(is.na(TRADEMARK.x), TRADEMARK.y, TRADEMARK.x)) %>%
+  select(-TRADEMARK.x,-TRADEMARK.y)
 
-allWipo<-allWipo %>%
-  mutate_if(is.character, funs(substr(.,1,31999)))%>%select(-dolzina)
+allWipo <- allWipo[, c(1, 2, 34, 3:33)]
 
-allWipo[is.na(allWipo)]<-""
-allWipo<-allWipo[,c(1:6,33,7:11,20,18,13:17,19,21:32)]
+#allWipo<-allWipo %>%
+# mutate_if(is.character, funs(substr(.,1,31999)))%>%select(-dolzina)
+
+allWipo[is.na(allWipo)] <- ""
+allWipo <- allWipo[, c(1:6, 33, 7:11, 20, 18, 13:17, 19, 21:32)]
+
+#Adding a link column
+allWipo$link <-
+  paste(
+    "http://www.wipo.int/madrid/monitor/en/showData.jsp?ID=BRN:",
+    allWipo$`International Registration Number`,
+    sep = ""
+  )
+
+allWipo <- allWipo[, c(1, 33, 2:32)]
+
+#write_xlsx(allWipo,path ="WipoDATA1.xlsx")
+
+listNo <- c("")
+listDesc <- c("")
+
+for (j in 1:34) {
+  listNo <- c(listNo, paste("classNo", j, sep = ""))
+  listDesc <- c(listDesc, paste("classDesc", j, sep = ""))
+}
+
+num <- listNo[-1]
+desc <- listDesc[-1]
+
+
+allWipo <-
+  allWipo %>% separate(., col = CLASSNO, into = num, sep = "\\|")
+
+allWipo <-
+  allWipo %>% separate(., col = `Basic Goods and services details`, into =
+                         desc, sep = "\\|")
+
+allWipo <- allWipo %>%
+  mutate_if(is.character, funs(substr(., 1, 31999))) %>% select(-dolzina)
+
 #write.csv(allWipo,file="Preliminary.csv")
-write_xlsx(allWipo,path ="WipoDATA.xlsx")
+write_xlsx(allWipo, path = "WipoDATA.xlsx")
 
+AllOther <- do.call(rbind.fill, lapply(tmp, `[[`, 2))
+
+listNames <- as.list(names(AllOther))
+
+for (i in 1:length(listNames)) {
+  OldName <- gsub("\\.text", "", listNames[[i]])
+  NewName <- as.character(colNames[colNames$Short == OldName, 2])
+  
+  if (NewName != "character(0)") {
+    names(AllOther)[i] <- NewName
+  } else {
+    names(AllOther)[i] <- OldName
+  }
+  
+}
+
+#AllOther[is.na(AllOther),8:115]<-""
+
+# tempDF<-AllOther%>%select(starts_with("DCPCD"))
+# tempDF[is.na(tempDF)]<-""
+# AllOtherTemp<-Filter(function(u) any(c('DE') %in% u), AllOther)%>%select(-starts_with("DCPCD"))
+# cols_to_concat<-names(tempDF %>% select(which(grepl("DE",.))))
+# cols_to_concat<-c(cols_to_concat,"Designated Contracting Party Code")
+# dcpcdDF<-AllOther[,cols_to_concat]
+# dcpcdDF[is.na(dcpcdDF)] <- ""
+# DCPCD<-dcpcdDF %>% unite_(col='DCPCD', c(cols_to_concat), sep=",", remove=TRUE)
+# colnames(DCPCD)<-c("Designated Contracting Party Code")
+
+AllOther[is.na(AllOther$`Designated Contracting Party Code`), "Designated Contracting Party Code"] <-
+  ""
+AllOther[is.na(AllOther$`Goods and Services limited to:`), "Goods and Services limited to:"] <-
+  ""
+#AllOther<-AllOther[,1:11]
+
+final <- AllOther
+#final<-left_join(final,unique(allWipo[,c(1,4)]), by=c("RegNo"="International Registration Number"))
+#final<-final[,c(1,12,2:11)]
+write_xlsx(final, path = "GermanyWipoDATA.xlsx")

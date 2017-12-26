@@ -3,7 +3,7 @@ colNames<-read_excel(path="colnames.xlsx")
 
 Page<-function(file) {
 
-  #file <- "./WipoZips/903889.xml"
+  #file <- "./WipoZips/1002999.xml"
   
 xmlDoc <- xmlParse(file)
   
@@ -91,6 +91,7 @@ for (i in 2:xmlSize(rootNode)) {
    
     for (j in 1:length(current)) {
      
+      #j=1
       dftemp<-as.data.frame(gsub("\n","",paste(as.vector(current[[j]]),collapse=", ")), stringsAsFactors = FALSE)
       colnames(dftemp)<-names(current[j])
 
@@ -171,4 +172,4 @@ for (i in 1:length(listNames)){
 }
 
 write.xlsx(front,file="Test.xlsx",sheetName = "front")
-write.xlsx(AllOther,file="Test.xlsx",sheetName = "AllOther", append = TRUE)
+write.xlsx(AllOther,file="Test.xlsx",sheetName = "AllOther")
