@@ -403,6 +403,8 @@ parent <-
             by = c("International Registration Number" = "RegNo")) %>%
   select(-CC)
 
+
+
 #Joining child
 child$`International Registration Number` <-
   as.character(child$`International Registration Number`)
@@ -478,11 +480,11 @@ allWipo <- allWipo %>%
 
 allWipo <- allWipo[, c(1, 2, 34, 3:33)]
 
-#allWipo<-allWipo %>%
-# mutate_if(is.character, funs(substr(.,1,31999)))%>%select(-dolzina)
+allWipo<-allWipo %>%
+ mutate_if(is.character, funs(substr(.,1,31999)))%>%select(-dolzina)
 
 allWipo[is.na(allWipo)] <- ""
-allWipo <- allWipo[, c(1:6, 33, 7:11, 20, 18, 13:17, 19, 21:32)]
+allWipo <- allWipo[, c(1:6, 33, 7:12, 20, 18, 13:17, 19, 21:32)]
 
 #Adding a link column
 allWipo$link <-
@@ -492,7 +494,7 @@ allWipo$link <-
     sep = ""
   )
 
-allWipo <- allWipo[, c(1, 33, 2:32)]
+allWipo <- allWipo[, c(1, 34, 2:33)]
 
 #write_xlsx(allWipo,path ="WipoDATA1.xlsx")
 
@@ -515,11 +517,88 @@ allWipo <-
   allWipo %>% separate(., col = `Basic Goods and services details`, into =
                          desc, sep = "\\|")
 
-allWipo <- allWipo %>%
-  mutate_if(is.character, funs(substr(., 1, 31999))) %>% select(-dolzina)
+#allWipo <- allWipo %>%
+ # mutate_if(is.character, funs(substr(., 1, 31999))) %>% select(-dolzina)
 
 #write.csv(allWipo,file="Preliminary.csv")
+
+
+#####Adding country name
+countryName<-read_excel(path="Country List.xlsx", sheet="Tabelle2")
+countryName[complete.cases(countryName), ]
+
+allWipo<-left_join(allWipo,countryName, by=c("Designations"="Country Code"))
+allWipo<-allWipo[,c(1:9,101,10:100)]
+
+#Searching for duplicates= parent regNo>1
+duplicates<-allWipo%>%dplyr::filter(.,Parent_Child=="Parent")%>%
+  select(`International Registration Number`)%>%
+  group_by(`International Registration Number`)%>%dplyr::summarise(No=n())%>%
+  dplyr::filter(.,No>1)
+
+duplicatesList<-as.list(duplicates$`International Registration Number`)
+allWipo$RECORDID1<-""
+allWipo$RECORDID2<-""
+
+temp<-allWipo
+
+allWipo<-temp
+for (i in 1:length(duplicatesList)) {
+    
+  #i=2 200499
+ print(i)
+  regNo1<-duplicatesList[[i]]
+
+  #regNo1<-"275125"
+  #Does regNo have a Active record ID
+  tempDF<-allWipo[allWipo$Parent_Child=="Parent" & trimws(allWipo$`International Registration Number`)==regNo1,c(1,5,7)]
+  
+  
+  tempDF<-tempDF%>%arrange(desc(Active))
+  keep<-head(tempDF$RECORDID,1)
+  
+  print(head(tempDF))
+  
+  if (nrow(tempDF)==2) {
+    
+    allWipo[allWipo$RECORDID==keep & allWipo$Parent_Child=="Parent",102]<-tempDF$RECORDID[2]
+    
+    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[2] & allWipo$Parent_Child=="Parent" &
+                         allWipo$`International Registration Number`==regNo1),]
+  } else
+  {
+    allWipo[allWipo$RECORDID==keep & allWipo$Parent_Child=="Parent",102]<-tempDF$RECORDID[2]
+    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[2] & allWipo$Parent_Child=="Parent" &
+                         allWipo$`International Registration Number`==regNo1),]
+    allWipo[allWipo$RECORDID==keep & allWipo$Parent_Child=="Parent",103]<-tempDF$RECORDID[3]
+    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[3] & allWipo$Parent_Child=="Parent" &
+                         allWipo$`International Registration Number`==regNo1),]
+    
+  }
+  
+  #print(head(allWipo[allWipo$`International Registration Number`=="1002999",5:7]))
+
+}
+
+
+allWipo<-allWipo[,c(1:7,102,103,8:101)]
+
+allWipo<-allWipo%>%arrange(.,`International Registration Number`,desc(Parent_Child))
 write_xlsx(allWipo, path = "WipoDATA.xlsx")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 AllOther <- do.call(rbind.fill, lapply(tmp, `[[`, 2))
 
