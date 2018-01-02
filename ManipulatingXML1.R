@@ -3,7 +3,7 @@ library(tidyr)
 colNames <- read_excel(path = "colnames.xlsx")
 
 Page <- function(file) {
-  #file <- "./WipoZips/167102.xml"
+  #file <- "./WipoZips/903889.xml"
   
   xmlDoc <- xmlParse(file)
   
@@ -73,7 +73,7 @@ Page <- function(file) {
   results1 <- list()
   ####Otherpages
   for (i in 2:xmlSize(rootNode)) {
-    #i=6
+    #i=1
     
     # print(paste("Začetek ",i,sep=""))
     
@@ -100,12 +100,19 @@ Page <- function(file) {
       results0[[i]] <- cbind(tmpRandW, nodesDF)
       
     } else {
-      #i=3
+      #i=24
       #print(i)
       # print(paste("Zanka ",i,sep=""))
       current <-
         xmlSApply(rootNode[[i]], function(x)
           xmlSApply(x, xmlValue))
+      
+      if (grepl("A|B|C",file,ignore.case=TRUE)) {
+      
+      current<-rbind(current,xmlSApply(rootNode[[i]], function(x)
+          xmlSApply(x, xmlAttrs))) }
+      
+
       
       if (!is.null(xmlAttrs(rootNode[[i]]))) {
         nodesDF <- as.data.frame(xmlAttrs(rootNode[[i]]))
@@ -143,6 +150,8 @@ Page <- function(file) {
           as.data.frame(current,
                         row.names = rown,
                         stringsAsFactors = FALSE)
+        
+        
       } else if (class(current) == "list") {
         keys <- unique(names(current))
         current <-
@@ -240,6 +249,15 @@ Page <- function(file) {
         
       }
       
+      if ("INTREGG" %in% colnames(preDF) && grepl("A|B|C",file,ignore.case=TRUE)) {
+      cols <- names(preDF) == "INTREGG"
+      names(preDF)[cols] <- paste0("INTREGG", seq.int(sum(cols)))
+      
+      INTREGG<-paste(preDF$INTREGG1,preDF$INTREGG2,sep="|")
+      preDF<-preDF%>%select(-INTREGG1,-INTREGG2)
+      preDF$INTREGG<-gsub("NULL","",INTREGG)
+      }
+      
       results0[[i]] <- preDF
       
       
@@ -264,21 +282,38 @@ Page <- function(file) {
   
   AllNodesDF <- do.call(rbind.fill, results0)
   
+
+  
   try(AllNodesDF<-AllNodesDF%>%dplyr::rename(PRF=PRF.LIMTO),silent = TRUE)
   try(AllNodesDF<-AllNodesDF%>%dplyr::rename(DCPCD=DCPCD.text),silent = TRUE)
   try(AllNodesDF<-AllNodesDF%>%dplyr::rename(LIMTO=`LIMTO.GSTERMFR`),silent = TRUE)
   
   where <-
     sapply(colnames(AllNodesDF), function(x)
-      grep("DE", AllNodesDF[, x]))
+      grep("DE|DD|New International Registration", AllNodesDF[, x]))
   
   rows <- as.numeric(unlist(where))
   AllNodesDF <- AllNodesDF[rows, ]
   AllNodesDF <- Filter(function(x)
     ! (all(x == "")), AllNodesDF)
   
+
+  
+  
   if (length(AllNodesDF) > 0)
   {
+    
+    if (!("NOTDATE" %in% colnames(AllNodesDF))) {
+      
+      AllNodesDF$NOTDATE<-NA
+      
+    }
+    
+    if (!("PUBDATE" %in% colnames(AllNodesDF))) {
+      
+      AllNodesDF$PUBDATE<-NA
+      
+    }
     colNames <- c("REGRDAT", "NOTDATE", "REGEDAT", "PUBDATE")
     
     AllNodesDF[colNames] <-
@@ -423,6 +458,8 @@ child <-
 
 allWipo <- rbind(parent, child)
 
+forAllOthers<-allWipo
+
 allWipo$INTREGD <- format(allWipo$INTREGD, "%d.%m.%Y")
 allWipo$EXPDATE <- format(allWipo$EXPDATE, "%d.%m.%Y")
 
@@ -557,7 +594,7 @@ for (i in 1:length(duplicatesList)) {
   tempDF<-tempDF%>%arrange(desc(Active))
   keep<-head(tempDF$RECORDID,1)
   
-  print(head(tempDF))
+  #print(head(tempDF))
   
   if (nrow(tempDF)==2) {
     
@@ -632,9 +669,24 @@ AllOther[is.na(AllOther$`Designated Contracting Party Code`), "Designated Contra
   ""
 AllOther[is.na(AllOther$`Goods and Services limited to:`), "Goods and Services limited to:"] <-
   ""
-#AllOther<-AllOther[,1:11]
 
-final <- AllOther
-#final<-left_join(final,unique(allWipo[,c(1,4)]), by=c("RegNo"="International Registration Number"))
-#final<-final[,c(1,12,2:11)]
+cols <- names(AllOther) == "Designated Contracting Party Code"
+names(AllOther)[cols] <- paste0("Designated Contracting Party Code", seq.int(sum(cols)))
+#Only correct regno
+where <-
+  sapply(colnames(AllOther), function(x)
+    grep("DE|DD", AllOther[, x]))
+
+rows <- unique(as.numeric(unlist(where)))
+AllNodesCorrectReg <- unique(as.vector(AllOther[rows,"RegNo"]))
+
+final <- unique(AllOther[AllOther$RegNo %in% AllNodesCorrectReg, ])
+
+#Adding data from allWipo
+vlookup<-unique(forAllOthers[forAllOthers$Parent_Child=="Parent",c(1,32,8,13,14)])
+
+
+final<-unique(left_join(final,vlookup, by=c("RegNo"="International Registration Number")))
+  
+
 write_xlsx(final, path = "GermanyWipoDATA.xlsx")
