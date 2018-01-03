@@ -568,27 +568,28 @@ allWipo<-left_join(allWipo,countryName, by=c("Designations"="Country Code"))
 allWipo<-allWipo[,c(1:9,101,10:100)]
 
 #Searching for duplicates= parent regNo>1
-duplicates<-allWipo%>%dplyr::filter(.,Parent_Child=="Parent")%>%
-  select(`International Registration Number`)%>%
-  group_by(`International Registration Number`)%>%dplyr::summarise(No=n())%>%
+duplicates<-allWipo%>%
+  select(`International Registration Number`,Designations)%>%
+  group_by(`International Registration Number`,Designations)%>%dplyr::summarise(No=n())%>%
   dplyr::filter(.,No>1)
 
-duplicatesList<-as.list(duplicates$`International Registration Number`)
+duplicatesList<-as.data.frame(duplicates[,1:2], stringAsFactors=FALSE)
 allWipo$RECORDID1<-""
 allWipo$RECORDID2<-""
 
 temp<-allWipo
 
 allWipo<-temp
-for (i in 1:length(duplicatesList)) {
+for (i in 1:nrow(duplicatesList)) {
     
-  #i=2 200499
+  #i=1
  print(i)
-  regNo1<-duplicatesList[[i]]
+  regNo1<-duplicatesList[i,1]
+  cc1<-duplicatesList[i,2]
 
   #regNo1<-"275125"
   #Does regNo have a Active record ID
-  tempDF<-allWipo[allWipo$Parent_Child=="Parent" & trimws(allWipo$`International Registration Number`)==regNo1,c(1,5,7)]
+  tempDF<-allWipo[trimws(allWipo$Designations)==cc1 & trimws(allWipo$`International Registration Number`)==regNo1,c(1,5,7)]
   
   
   tempDF<-tempDF%>%arrange(desc(Active))
@@ -598,17 +599,17 @@ for (i in 1:length(duplicatesList)) {
   
   if (nrow(tempDF)==2) {
     
-    allWipo[allWipo$RECORDID==keep & allWipo$Parent_Child=="Parent",102]<-tempDF$RECORDID[2]
+    allWipo[allWipo$RECORDID==keep & allWipo$Designations==cc1,102]<-tempDF$RECORDID[2]
     
-    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[2] & allWipo$Parent_Child=="Parent" &
+    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[2] & allWipo$Designations==cc1 &
                          allWipo$`International Registration Number`==regNo1),]
   } else
   {
-    allWipo[allWipo$RECORDID==keep & allWipo$Parent_Child=="Parent",102]<-tempDF$RECORDID[2]
-    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[2] & allWipo$Parent_Child=="Parent" &
+    allWipo[allWipo$RECORDID==keep & allWipo$Designations==cc1,102]<-tempDF$RECORDID[2]
+    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[2] & allWipo$Designations==cc1 &
                          allWipo$`International Registration Number`==regNo1),]
-    allWipo[allWipo$RECORDID==keep & allWipo$Parent_Child=="Parent",103]<-tempDF$RECORDID[3]
-    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[3] & allWipo$Parent_Child=="Parent" &
+    allWipo[allWipo$RECORDID==keep & allWipo$Designations==cc1,103]<-tempDF$RECORDID[3]
+    allWipo<-allWipo[!(allWipo$RECORDID==tempDF$RECORDID[3] & allWipo$Designations==cc1 &
                          allWipo$`International Registration Number`==regNo1),]
     
   }
@@ -683,7 +684,7 @@ AllNodesCorrectReg <- unique(as.vector(AllOther[rows,"RegNo"]))
 final <- unique(AllOther[AllOther$RegNo %in% AllNodesCorrectReg, ])
 
 #Adding data from allWipo
-vlookup<-unique(forAllOthers[forAllOthers$Parent_Child=="Parent",c(1,32,8,13,14)])
+vlookup<-unique(forAllOthers[forAllOthers$Parent_Child=="Parent",c(1,32,6,13,14)])
 
 
 final<-unique(left_join(final,vlookup, by=c("RegNo"="International Registration Number")))
