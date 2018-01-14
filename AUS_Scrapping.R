@@ -227,7 +227,7 @@ AUSScrap <- function(AppNo) {
   tmpDF <- cbind(
     data.frame(
       AppNo,
-      Trademark,
+      trademark,
       renewal,
       application,
       acceptance,
