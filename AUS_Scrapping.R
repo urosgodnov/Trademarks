@@ -249,6 +249,7 @@ AUSScrap <- function(AppNo) {
 
   tmpDF<-tmpDF%>%dplyr::rename(
     `Application no.`=AppNo,
+    Trademark=trademark,
     `Application date`=application,
     `Registration no.`=AppNo,
     `Registration date`=acceptance,
