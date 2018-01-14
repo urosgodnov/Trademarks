@@ -1,5 +1,7 @@
 AUSScrap <- function(AppNo) {
-  #AppNo <- 911058
+  #AppNo <- 553230
+
+
   #Making URL and Reading data
   url <-
     paste(
@@ -10,6 +12,13 @@ AUSScrap <- function(AppNo) {
     )
   
   data <- url %>% read_html()
+  
+  trademark <-
+    gsub(
+      "\n",
+      "",
+      data %>% html_nodes(xpath = "//tr[th/text()='Words']/td[1]") %>% html_text()
+    )
   
   renewal <-
     as.Date(
@@ -51,12 +60,18 @@ AUSScrap <- function(AppNo) {
     acceptance<-format(as.Date("1800-01-01","%Y-%m-%d"),"%d.%m.%Y")
   }
   
-  datep<-data %>% html_nodes(xpath = "//tr[td/text()='Priority date']/td[2]") %>% html_text()
+  datep<-data %>% html_nodes(xpath = "//tr[th/text()='Priority date']/td[1]") %>% html_text()
+  
+  datep<-gsub("(Lodgement)","",datep)
+  datep<-gsub("Convention","",datep)
+    
+  
+  
   priority <-
     as.Date(gsub(
       "\n",
       "",
-     ifelse (grepl("Convention",datep,grepl("Convention",date,ignore.case=TRUE)==TRUE),datep,NA)
+     datep
     ), "%d %B %Y")
   
   priority<-format(priority, "%d.%m.%Y")
@@ -72,14 +87,14 @@ AUSScrap <- function(AppNo) {
     gsub(
       "\n",
       "",
-      data %>% html_nodes(xpath = "//tr[td/text()='Status']/td[2]") %>% html_text()
+      data %>% html_nodes(xpath = "//tr[th/text()='Status']/td[1]") %>% html_text()
     )
   
   kind <-
     gsub(
       "\n",
       "",
-      data %>% html_nodes(xpath = "//tr[td/text()='Kind']/td[2]") %>% html_text()
+      data %>% html_nodes(xpath = "//tr[th/text()='Kind']/td[1]") %>% html_text()
     )
   
   #words
@@ -169,14 +184,17 @@ AUSScrap <- function(AppNo) {
     gsub(
       "\n",
       "",
-      data %>% html_nodes(xpath = "//tr[td/text()[contains(.,'\nClass')]]/td[2]") %>% html_text()
+      data %>% html_nodes(xpath = "//span[@class='title']") %>% html_text()
     )
+  
+  classes<-gsub('\\D+','', classes)
   classes <- strsplit(classes, ",")
   
   #Search and fill columns in tmpDF
-  for (i in 1:length(classes[[1]]))
+  for (i in 1:length(classes))
   {
-    currentClassNumber <- classes[[1]][[i]]
+    
+    currentClassNumber <- classes[[i]]
     
     currentClassDesc <-
       gsub("\n", "", data %>% html_nodes(
@@ -209,6 +227,7 @@ AUSScrap <- function(AppNo) {
   tmpDF <- cbind(
     data.frame(
       AppNo,
+      Trademark,
       renewal,
       application,
       acceptance,
@@ -261,7 +280,7 @@ AUSScrap <- function(AppNo) {
     `9th Goods & Services`=description9
   )
   
-  tmpDF<-tmpDF%>%mutate(`Application No.`=as.character(`Registration No.`))
+  tmpDF<-tmpDF%>%mutate(`Application no.`=as.character(`Registration no.`))
   
   if (class(tmpDF) != "data.frame")
   {
