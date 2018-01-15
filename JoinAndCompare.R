@@ -57,7 +57,7 @@ cells <- getCells(rows, colIndex = 1:cols)    # get cells
 # change start column if loadings do not start in second column of excel
 values <- lapply(cells, getCellValue)             # extract the values
 
-fo <- Fill(foregroundColor="green")                  # create fill object
+fo <- Fill(foregroundColor="#FFFF99")                  # create fill object
 cs <- CellStyle(wb, fill=fo) 
 # apply style to cells that meet criteria
 lapply(names(cells[highlight]),
@@ -100,6 +100,8 @@ if (nrow(errors)>0) {
   
 }
 
+imageCol<-which(colnames(allData)=="Image" )
+#print(imageCol)
 #here i put app no. Watch what is unique
 RegNumList<-as.list(unique(gsub("\\D","",allData$`Application no.`[allData$sourceType=='verification'])))
 #Adding logos
@@ -108,20 +110,45 @@ for (i in 1:length(RegNumList)) {
   
   #Read registration number
   RegNum<-RegNumList[[i]]
+  goFurther<-1
   
   
-  
-  #RegNum<-"1067746"
+  #RegNum<-"1002921"
   imagFile<-paste("./logos/",RegNum,".jpeg",sep="")
-  if (!file.exists(imagFile)) {
-    imagFile<-paste("./logos/",RegNum,".jpg",sep="")
-    if (!file.exists(imagFile)) {
-      imagFile<-paste("./logos/",RegNum,".png",sep="")
-      if (!file.exists(imagFile)) {
-        imagFile<-paste("./logos/",RegNum,".gif",sep="")
-      }
+  
+  if (file.exists(imagFile)) { 
+    try(addPicture(imagFile, sheet, scale=0.2,startRow =startRow+3*i, startColumn =imageCol ))
+    goFurther<-0
+
     }
+  
+  imagFile<-paste("./logos/",RegNum,".jpg",sep="")
+    
+  if (file.exists(imagFile) && goFurther==1) { 
+    
+    img <- readJPEG(imagFile)
+    
+    writeJPEG(img,paste("./logos/",RegNum,".jpeg",sep=""))
+    
+    try(addPicture(paste("./logos/",RegNum,".jpeg",sep=""), sheet, scale=0.2,startRow =startRow+3*i, startColumn =imageCol ))
+    
+    goFurther<-0
+      }
+      
+  imagFile<-paste("./logos/",RegNum,".png",sep="")
+      
+  if (file.exists(imagFile) && goFurther==1) {
+    try(addPicture(imagFile, sheet, scale=0.2,startRow =startRow+3*i, startColumn =imageCol ))
+    goFurther<-0
+      }
+
+  imagFile<-paste("./logos/",RegNum,".gif",sep="")
+  
+  if (file.exists(imagFile) && goFurther==1) {
+    try(addPicture(imagFile, sheet, scale=0.2,startRow =startRow+3*i, startColumn =imageCol ))
+    goFurther<-0
   }
+  
   #imagFile1<-paste("./logos/",RegNum,".gif",sep="")
   # if(file.exists(imagFile) || file.exists(imagFile1)) {
   # 
@@ -138,8 +165,7 @@ for (i in 1:length(RegNumList)) {
   
   
   
-  try(addPicture(imagFile, sheet, scale=0.4,startRow =startRow+3*i, startColumn =startColumn+9 ))
-  
+   
   # }
 }
 
@@ -422,7 +448,23 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     
     }
   
-  
+    #moving client's comment at the end
+      comment<-which(colnames(allData)=="Client's comment")
+      
+      if (is.numeric(comment)) {
+        
+        col_idx <- grep("Client's comment", names(allData))
+        
+        allData <- allData[, c((1:ncol(allData))[-col_idx], col_idx)]
+        
+        
+        col_idx <- grep("Eval", names(allData))
+        
+        allData <- allData[, c((1:ncol(allData))[-col_idx], col_idx)]
+        #allData<-allData%>%select(-`Client's comment`,`Client's comment`)
+
+      }
+      
     
     
     #Before creating excel, final check if there are 3 lines per app number
