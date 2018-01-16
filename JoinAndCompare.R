@@ -214,11 +214,12 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
   #   verificationFile<-as.data.frame(read_excel(path=path))
    # # #names(verificationFile)<-tolower(names(verificationFile))
 
-  
+ 
     colnames<-names(destinationFile)
     
     verificationFile$`Application no.`<-trimws(verificationFile$`Application no.`)
     destinationFile$`Application no.`<-trimws(destinationFile$`Application no.`)
+    checkDest<-destinationFile
     forExcelComparison<-verificationFile
     #Add additional column with source type
     destinationFile<-cbind(data.frame(sourceType=rep(c("client","agent"),nrow(destinationFile)/2)),destinationFile)
@@ -228,7 +229,21 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     #destinationFile<-destinationFile[!is.na(destinationFile$`Application no.`),]
     
     colnames(destinationFile)<-gsub(" ","__",names(destinationFile))
-    destinationFile$Application__no.<-gsub("\\D", "", destinationFile$Application__no.)
+    
+ 
+        destinationFile$Application__no.<-gsub("\\D", "", destinationFile$Application__no.)
+   
+    
+    
+    if (Country=="Macao" || Country=="Japan") {
+      verificationFile$`Application no.`<-gsub("\\D", "", verificationFile$`Application no.`)
+    }
+    
+    
+    #removing leading zeros for EU
+    if (Country=="EU" || Country=="Macao" ) {
+      destinationFile$Application__no.<-gsub("(?<![0-9])0+", "", destinationFile$Application__no., perl = TRUE) }
+    
     
     verificationFile<-cbind(data.frame(sourceType=rep("verification",nrow(verificationFile))),verificationFile)
 
@@ -260,7 +275,8 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
       verificationFile$AppOLD<-v1$Application__no.
       destinationRecordName$Application__no.<-as.numeric(destinationRecordName$Application__no.)
       
-     }
+    }
+    browser()
     verificationFile<-inner_join(destinationRecordName,verificationFile, by="Application__no.",copy=TRUE)
    
      if("Trademark.y" %in% colnames(verificationFile)) {
@@ -272,6 +288,51 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
       verificationFile<-dplyr::rename(verificationFile,Application__no.=AppOLD)
       
     }
+    
+    
+    #Status for Macao
+    if (Country=="Macao") {
+
+      verificationFile[verificationFile$Status=="Not to renew","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="[ Registered ]","Status"]<-"Registered"
+      verificationFile[verificationFile$Status=="Allow to lapse","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="Instructed not to renew","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="No longer in our care – no reminders","Status"]<-"Registered"
+      verificationFile[verificationFile$Status=="Published","Status"]<-"Filed"
+      
+    }
+    
+    #Status for Japan
+    if (Country=="Japan") {
+      browser()
+       try(verificationFile[verificationFile$Status=="Pending","Status"]<-"Filed", silent = TRUE)
+    }
+    
+    #Status for China
+    if (Country=="China") {
+      
+      verificationFile[verificationFile$Status=="[ Invalid ]","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="[ Registered ]","Status"]<-"Registered"
+      verificationFile[verificationFile$Status=="Application filed","Status"]<-"Filed"
+      verificationFile[verificationFile$Status=="Application Filed","Status"]<-"Filed"
+      verificationFile[verificationFile$Status=="Being cancelled by third party","Status"]<-"Filed"
+      verificationFile[verificationFile$Status=="Awaiting client's instructions","Status"]<-"Filed"
+      
+      verificationFile[verificationFile$Status=="Being opposed by third party","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="Instructed not to renew","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="Instructed to let lapse","Status"]<-"Inactive"
+      
+      verificationFile[verificationFile$Status=="Lapsed – no instructions","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="Notification of Rejection Received","Status"]<-"Filed"
+      
+      verificationFile[verificationFile$Status=="Published","Status"]<-"Filed"
+      verificationFile[verificationFile$Status=="Rejection Maintained","Status"]<-"Filed"
+      verificationFile[verificationFile$Status=="Removed","Status"]<-"Inactive"
+      
+      verificationFile[verificationFile$Status=="Request for Review Filed","Status"]<-"Filed"
+      verificationFile[verificationFile$Status=="To Be Advertised","Status"]<-"Filed"
+    }
+    
     colnames(verificationFile)[1]<-c("Record_ID")
     
     #creating same column structure in verification file
@@ -316,6 +377,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     #Performing Union
 
     allData<-union_all(destinationFile,verificationFile)
+    
     
     #Excluding elements, that are not in verification file
     #Those will be managed with erros
@@ -404,7 +466,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     ExcelIsCreated<-TRUE
 
        
-      if (Country=="China" && !("Again" %in% colnames(forExcelComparison))) {
+      if ((Country=="China" || Country=="Japan") && !("Again" %in% colnames(checkDest))) {
          
         error$`Registration no.`<-gsub("\\.","",error$`Registration no.`)
         error$`Registration no.`<-gsub(",","",error$`Registration no.`)
@@ -419,12 +481,12 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
          select(`Application no.`)
        
        forExcelComparison$Again<-""
-       
-       write.xlsx2(
-         forExcelComparison,
-         file = paste("./data/",Country,".xlsx",sep="") ,
-         row.names = FALSE
-       )
+
+       # write.xlsx2(
+       #   forExcelComparison,
+       #   file = paste("./data/",Country,".xlsx",sep="") ,
+       #   row.names = FALSE
+       # )
         
        fileName<- paste("./InputData/",Country,"_UpdateList.xlsx",sep="") 
          print(fileName)

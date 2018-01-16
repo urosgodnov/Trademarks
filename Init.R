@@ -68,7 +68,9 @@ flyt <- gformlayout(cont=lg)
 addSpring(lg)
 
 # choose country
-countries <- c("Argentina"="Argentina","Australia"="Australia", "BENELUX"="BENELUX", "China"="China","UK"="UK", "USA"="USA")
+countries <- c("Argentina"="Argentina","Australia"="Australia", "BENELUX"="BENELUX", "China"="China","EU"="EU",
+               "Japan"="Japan",
+               "Laos"="Laos","Macao"="Macao","Spain"="Spain","UK"="UK", "USA"="USA")
 
 country <- gcombobox(names(countries), cont=flyt, label="Country",
                      handler=function(h,...){
