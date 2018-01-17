@@ -230,13 +230,18 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     
     colnames(destinationFile)<-gsub(" ","__",names(destinationFile))
     
- 
-        destinationFile$Application__no.<-gsub("\\D", "", destinationFile$Application__no.)
-   
+    if (Country=="HK") {
+      destinationFile$Application__no.<-gsub("\\D", "", destinationFile$Application__no.)}
     
     
-    if (Country=="Macao" || Country=="Japan") {
+    if (Country=="Macao") {
       verificationFile$`Application no.`<-gsub("\\D", "", verificationFile$`Application no.`)
+    }
+        
+    if (Country=="Japan") {
+          verificationFile$`Application no.`<-gsub("\\D", "", verificationFile$`Application no.`)
+          destinationFile$Registration__no.<-gsub("\\D", "", destinationFile$Registration__no.)
+          verificationFile$`Registration no.`<-gsub("\\D", "", verificationFile$`Registration no.`)
     }
     
     
@@ -276,9 +281,10 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
       destinationRecordName$Application__no.<-as.numeric(destinationRecordName$Application__no.)
       
     }
-    browser()
+  
+     
     verificationFile<-inner_join(destinationRecordName,verificationFile, by="Application__no.",copy=TRUE)
-   
+  
      if("Trademark.y" %in% colnames(verificationFile)) {
            verificationFile<-dplyr::rename(verificationFile,Trademark=Trademark.y)
      }
@@ -304,8 +310,22 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     
     #Status for Japan
     if (Country=="Japan") {
-      browser()
+ 
        try(verificationFile[verificationFile$Status=="Pending","Status"]<-"Filed", silent = TRUE)
+    }
+    
+
+    #Status for HK
+    if (Country=="HK") {
+      
+      verificationFile[verificationFile$Status=="[ Registered ]","Status"]<-"Registered"
+      verificationFile[verificationFile$Status=="[ Registration Merged ]","Status"]<-"Registered"
+      verificationFile[verificationFile$Status=="Instructed not to renew","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="Office action received","Status"]<-"Filed"
+      verificationFile[verificationFile$Status=="Registered","Status"]<-"Registered"
+      verificationFile[verificationFile$Status=="Registration cancelled by merger","Status"]<-"Inactive"
+      verificationFile[verificationFile$Status=="Removed","Status"]<-"Inactive"
+      
     }
     
     #Status for China
@@ -451,6 +471,8 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     error<-error[,names(allData)]
     
     error$Record_ID<-as.integer(error$Record_ID)
+    
+
     }
     #Alldata application number to string as errors have app number with this type
     allData$`Application no.`<-as.character(allData$`Application no.`)
@@ -466,7 +488,7 @@ joinAndCompare<-function(verificationFile,destinationFile, Country){
     ExcelIsCreated<-TRUE
 
        
-      if ((Country=="China" || Country=="Japan") && !("Again" %in% colnames(checkDest))) {
+      if ((Country=="China" || Country=="HK") && !("Again" %in% colnames(checkDest))) {
          
         error$`Registration no.`<-gsub("\\.","",error$`Registration no.`)
         error$`Registration no.`<-gsub(",","",error$`Registration no.`)
