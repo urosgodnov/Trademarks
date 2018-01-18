@@ -11,8 +11,9 @@ createExcel <- function(allData,
 
   
 
-  if (Country != "BENELUX" && Country !="Japan" && Country !="HK" && Country !="China") {
-    allData$`Application no.` <- as.integer(allData$`Application no.`)
+  if (Country != "BENELUX" && Country !="Japan" && Country !="HK" && Country !="China"
+      && Country !="Macao") {
+    #allData$`Application no.` <- as.integer(allData$`Application no.`)
   }
   allData <- allData %>% arrange(Record_ID, sourceType)
   #selecting cells which will be formated differently
@@ -438,6 +439,14 @@ joinAndCompare <- function(verificationFile,
       "Filed"
   }
   
+  if (Country=="EU" || Country=="Macao") {
+    
+    verificationFile$`Application no.`<-as.character(verificationFile$`Application no.`)
+    verificationFile$`Registration no.`<-as.character(verificationFile$`Registration no.`)
+    
+  }
+  
+  
   # Country="Japan"
   #source("CallData.R")
   #source("GetAllData.R")
@@ -446,7 +455,7 @@ joinAndCompare <- function(verificationFile,
   
   #HK, JP, China
   #Exracting errors and try RegNo on RegNo
-  if (Country %in% c("Japan", "HK", "China")) {
+  if (Country %in% c("Japan", "HK", "China","EU","Spain","Macao")) {
     #Getting allData -appNo=AppNo - the most common way
     
    
@@ -462,7 +471,7 @@ joinAndCompare <- function(verificationFile,
                  Country,
                  VerJoin,
                  DesJoin)
-    
+   
 
     VerJoin <- "Registration no."
     DesJoin <- "Registration no."
@@ -477,6 +486,7 @@ joinAndCompare <- function(verificationFile,
       
     #finding those from agent, that are not in
     
+   
     allData <- notIn(fromAgent,allData,1)
     
 
@@ -493,7 +503,7 @@ joinAndCompare <- function(verificationFile,
                  DesJoin)
     
     #finding those from agent, that are not in
-    allData <- notIn(fromAgent,allData,2)
+    #allData <- notIn(fromAgent,allData,2)
   }
   
   

@@ -1,4 +1,6 @@
 notIn <- function(fromAgent, allData, what = 1) {
+  
+ 
   if (what == 1) {
     VerJoin <- "Application no."
     DesJoin <- "Application no."
@@ -73,9 +75,8 @@ GetAllData <-
     colnames(destinationFile) <-
       gsub(" ", "__", names(destinationFile))
     
-   
-    
-    if (Country == "HK") {
+  
+    if (Country  %in% c("EU","HK","Macao")) {
       destinationFile$Application__no. <-
         gsub("[^[:alnum:]]", "", destinationFile$Application__no.)
       destinationFile$Registration__no. <-
@@ -83,13 +84,7 @@ GetAllData <-
       verificationFile$`Registration no.` <-
         gsub("[^[:alnum:]]", "", verificationFile$`Registration no.`)
     }
-    
-    
-    if (Country == "Macao") {
-      verificationFile$`Application no.` <-
-        gsub("\\D", "", verificationFile$`Application no.`)
-    }
-    
+
 
     if (Country == "Japan") {
       verificationFile$`Application no.` <-
@@ -112,6 +107,13 @@ GetAllData <-
         gsub("(?<![0-9])0+",
              "",
              destinationFile$Application__no.,
+             perl = TRUE)
+      
+      
+      destinationFile$Registration__no. <-
+        gsub("(?<![0-9])0+",
+             "",
+             destinationFile$Registration__no.,
              perl = TRUE)
     }
     
