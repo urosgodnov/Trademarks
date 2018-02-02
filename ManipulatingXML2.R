@@ -2,6 +2,22 @@ library(xml2)
 library(tidyr)
 colNames <- read_excel(path = "colnames.xlsx")
 
+
+
+cbind.fill1 <- function(...){
+  nm <- list(...) 
+  dfdetect <- grepl("data.frame|matrix", unlist(lapply(nm, function(cl) paste(class(cl), collapse = " ") )))
+  # first cbind vectors together 
+  vec <- data.frame(nm[!dfdetect])
+  n <- max(sapply(nm[dfdetect], nrow)) 
+  vec <- data.frame(lapply(vec, function(x) rep(x, n)))
+  if (nrow(vec) > 0) nm <- c(nm[dfdetect], list(vec))
+  nm <- lapply(nm, as.data.frame)
+  
+  do.call(cbind, lapply(nm, function (df1) 
+    rbind(df1, as.data.frame(matrix(NA, ncol = ncol(df1), nrow = n-nrow(df1), dimnames = list(NULL, names(df1))))) )) 
+}
+
 node<-function(data, path) {
 
   nodeSet<-getNodeSet(data, path)
@@ -24,7 +40,7 @@ node<-function(data, path) {
 }
 
 Page <- function(file) {
-  #file <- "./WipoZips/293830A.xml"
+  #file <- "./WipoZips/1002999.xml"
   
   
   xmlDoc <- xmlParse(file)
@@ -95,7 +111,7 @@ Page <- function(file) {
   CLASSDESC <- paste(current$BASICGS, collapse = "|")
   
   for (i in 1:length(current)) {
-    #i=1
+    #i=2
     dftemp <-
       as.data.frame(gsub("\n", " ", paste(as.vector(current[[i]]), collapse = ", ")), stringsAsFactors = FALSE)
     colnames(dftemp) <- names(current[i])
@@ -132,8 +148,8 @@ Page <- function(file) {
   results1 <- list()
   ####Otherpages
   for (i in 2:xmlSize(rootNode)) {
-    #i=22
-    
+    #i=31
+    #i=5
     # print(paste("Začetek ",i,sep=""))
     
     if (xmlSize(rootNode[[i]]) == 0) {
@@ -160,7 +176,7 @@ Page <- function(file) {
       results0[[i]] <- cbind(tmpRandW, nodesDF)
       
     } else {
-      #i=24
+      #i=3
       #print(i)
       # print(paste("Zanka ",i,sep=""))
       current <-
@@ -205,50 +221,173 @@ Page <- function(file) {
       DCPCD <- NA
       
       if (class(current) == "matrix") {
+        
+   
         rown <- as.vector(as.character(nrow(current)))
         statesDF <-
           as.data.frame(current,
                         row.names = rown,
                         stringsAsFactors = FALSE)
         
+        if (regNumber=="315657A") {
+          
+          name<-gsub("\\.DCPCD","",colnames(statesDF))
+          colnames(statesDF)<-name
+          
+        }
+        
+        if ("DCPCD" %in% colnames(statesDF)) {
+          
+          try(DCPCD <- paste(statesDF$DCPCD, collapse = ","), silent = TRUE)
+          
+          DCPCD<-gsub(",,","",DCPCD)
+          
+        } else {
+          
+          DCPCD<-NA
+          
+        }
+        
+        
+        if ("REMVD" %in% colnames(statesDF)) {
+          
+          try(REMVD <- as.character(statesDF[1,"REMVD"]), silent = TRUE)
+          
+          Encoding(REMVD) <- "UTF-8"
+          
+        } else {
+          
+          REMVD<-NA
+          
+        }
+        
+        
+        if (!is.na(DCPCD) && !is.na(REMVD)) {
+          
+          statesDF<-as.data.frame(cbind(DCPCD,REMVD), stringsAsFactors = FALSE)
+          colnames(statesDF)<-c("DCPCD","REMVD")
+          
+          
+        }
+        
+        statesDF[is.na(statesDF)] <- ""
+        
         
       } else if (class(current) == "list") {
         keys <- unique(names(current))
         current <-
           sapply(keys, function(name) {
-            unlist(current[grep(name, names(current))])
+            unlist((current[grep(name, names(current))]))
           })
         
-        try(DCPCD <-
-              paste(current$DCPCD, collapse = ","), silent = TRUE)
+        #print(i)
+        toDF<-as.data.frame(current[[1]], stringsAsFactors = FALSE)
         
-        if (length(DCPCD) == 0) {
-          DCPCD <- NA
+        if (nrow(toDF)==0) {
+          
+          toDF<-as.data.frame("")
         }
         
-        try(LIMTO <- current$LIMTO[[1]], silent = TRUE)
+        if (length(current)>1) {
         
-        if (length(LIMTO) == 0) {
-          LIMTO <- NA
-        } else if (!is.na(LIMTO)) {
+        for (l in 2:length(current)) {
+          
+          
+          tdf1<-as.data.frame(current[[l]], stringsAsFactors = FALSE)
+          
+          toDF<-cbind.fill1(toDF,tdf1)
+          
+        }
+        }
+        
+        names(toDF)<-keys
+        
+        if (ncol(toDF)!=length(keys)) {
+          
+          col1<-paste((toDF[,1:2]),collapse = ",")
+          col2<-paste((toDF[,3]),collapse = ",")
+          
+          toDF<-as.data.frame(cbind(col1,col2), stringsAsFactors = FALSE)
+          names(toDF)<-keys
+        }
+        
+        if ("LIMTO" %in% colnames(toDF)) {
+          
+          try(LIMTO <- as.character(toDF[1,"LIMTO"]), silent = TRUE)
+          
           Encoding(LIMTO) <- "UTF-8"
+          
+        } else {
+          
+          LIMTO<-NA
           
         }
         
-        current <- lapply(current, `length<-`, max(lengths(current)))
+        if ("DCPCD" %in% colnames(toDF)) {
+          
+          try(DCPCD <- paste(toDF$DCPCD, collapse = ","), silent = TRUE)
+          
+          DCPCD<-gsub(",,","",DCPCD)
+          
+        } else {
+          
+          DCPCD<-NA
+          
+        }
         
-        rown <- as.vector(as.character(length(current[[1]])))
         
-        try(statesDF <-
-              as.data.frame(current, stringsAsFactors = FALSE))
+        if ("REMVD" %in% colnames(toDF)) {
+          
+          try(REMVD <- as.character(toDF[1,"REMVD"]), silent = TRUE)
+          
+          Encoding(REMVD) <- "UTF-8"
+          
+        } else {
+          
+          REMVD<-NA
+          
+        }
+
+        if (!is.na(DCPCD) && !is.na(LIMTO)) {
+          
+          statesDF<-as.data.frame(cbind(DCPCD,LIMTO), stringsAsFactors = FALSE)
+          colnames(statesDF)<-c("DCPCD","LIMTO")
+          
+        
+        }else if (!is.na(DCPCD) && !is.na(REMVD)){
+          statesDF<-as.data.frame(cbind(DCPCD,REMVD), stringsAsFactors = FALSE)
+          colnames(statesDF)<-c("DCPCD","REMVD")
+          
+        }else {
+        try(statesDF <-toDF)
+          
+          }
+        
+        statesDF[is.na(statesDF)] <- ""
+        
+
+        
         
       } else {
         names <- gsub("\\.text", "", unique(names(current)))
-        names <- gsub("\\.LIMTO", "", unique(names(current)))
-        names <- gsub("\\.DCPCD", "", unique(names(current)))
+        names <- gsub("\\.LIMTO", "", names)
+        names <- gsub("\\.DCPCD", "", names)
         if (length(names) == 1) {
+          if (class(current)=="character") {
+            
+            statesDF <- as.data.frame(matrix(current, ncol = length(current), byrow = TRUE), stringsAsFactors = FALSE)
+            
+            if (ncol(statesDF)>1) {
+              
+              statesDF<-as.data.frame(paste(statesDF[1,],collapse=","), stringsAsFactors = FALSE)
+              
+            }
+            
+            colnames(statesDF) <- names
+          }
+          else {
           statesDF <- as.data.frame(current, stringsAsFactors = FALSE)
-          colnames(statesDF) <- names
+          colnames(statesDF) <- names}
         }
         else {
           tmpNames <- as.data.frame(paste(current[grep(names[1], names(current))],collapse=","), stringsAsFactors = FALSE)
@@ -261,6 +400,7 @@ Page <- function(file) {
           }
           
           colnames(tmpNames) <- names
+          
           
           
         }
@@ -276,7 +416,7 @@ Page <- function(file) {
       
       colnames(statesDF) <- gsub("\\.text", "", names(statesDF))
       
-      if (length(statesDF) > 0 && is.na(DCPCD) && is.na(tmpNames)) {
+      if (length(statesDF) > 0 && is.na(tmpNames) && is.na(DCPCD)) {
         for (j in 1:ncol(statesDF)) {
           states <- ""
           
@@ -289,6 +429,8 @@ Page <- function(file) {
             states <- states[-1]
             states <- paste(states, collapse = ",")
           }
+          
+          states<-gsub(",,","",states)
           
           statesDF1 <-
             as.data.frame(states, stringsAsFactors = FALSE)
@@ -377,12 +519,13 @@ Page <- function(file) {
   try(AllNodesDF<-AllNodesDF%>%dplyr::rename(DESPG2=`DESPG2.DCPCD`),silent = TRUE)
   try(AllNodesDF<-AllNodesDF%>%dplyr::rename(DESPG=`DESPG.DCPCD`),silent = TRUE)
   
-  #finding those rows that have NA everywhere but in the first 6 columns
-  # otherColumns<-AllNodesDF[,8:ncol(AllNodesDF)]
-  # 
-  # where1 <-which(!rowSums(!is.na(otherColumns))) 
-  # 
-  # rows<-unique(c(rows,where1))
+  where <-
+    sapply(colnames(AllNodesDF), function(x)
+      grep("New International Registration", AllNodesDF[, x]))
+  
+  rows <- unique(as.numeric(unlist(where)))
+  
+  AllNodesDF <- AllNodesDF[rows, ]
   
   AllNodesDF <- Filter(function(x)
     ! (all(x == "")), AllNodesDF)
@@ -734,14 +877,19 @@ write_xlsx(allWipo, path = "WipoDATA.xlsx")
 
 
 AllOther <- do.call(rbind.fill, lapply(tmp, `[[`, 2))
+AllOther  <- mutate_if(AllOther, is.Date, as.character)
+AllOther[is.na(AllOther)]<-""
 
-AllOther<-AllOther[,c(1:8,10,9,11,14,21,36,42,12,13,15:20,22:35,37:41,43:ncol(AllOther))]
+
+AllOther<-AllOther%>%select(RegNo,DESPG2,DESPG,DESAG)
 
 listNames <- as.list(names(AllOther))
 
 for (i in 1:length(listNames)) {
   OldName <- gsub("\\.text", "", listNames[[i]])
   OldName <- gsub("\\.1", "", listNames[[i]])
+  OldName <- gsub("INTENTG\\.", "", listNames[[i]])
+  OldName <- gsub("INTREGG\\.1", "INTREGG", listNames[[i]])
   NewName <- as.character(colNames[colNames$Short == OldName, 2])
   
   if (NewName != "character(0)") {
@@ -752,6 +900,86 @@ for (i in 1:length(listNames)) {
   
 }
 
+AllOther<-AllOther%>%
+mutate(Designations = (paste(
+  ifelse(
+    is.na(`Designations under the Protocol by virtue of Article 9sexies`),
+    "",
+    `Designations under the Protocol by virtue of Article 9sexies`
+  ),
+  ifelse(
+    is.na(`Designations under the Protocol`),
+    "",
+    `Designations under the Protocol`
+  ),
+  ifelse(
+    is.na(`Designations under the Agreement`),
+    "",
+    `Designations under the Agreement`
+  ),
+  sep = ","
+)))%>%
+select(RegNo,Designations)%>%mutate(Designations = (strsplit(as.character(Designations), ",")))%>%unnest(Designations)
+
+
+
+AllOther<-unique(AllOther)
+  
+AllOther<-AllOther[AllOther$Designations!="",]
+AllOther$RegNo<-as.character(AllOther$RegNo)
+AllOther$Designations<-trimws(AllOther$Designations)
+
+
+parentD<-as.data.frame(parent[,c(1,28)], stringAsFactors=FALSE)%>%mutate(Designations = (strsplit(as.character(Designations), ",")))%>%
+  unnest(Designations)%>%dplyr::rename(RegNo=`International Registration Number`)
+
+parentD$Designations<-trimws(parentD$Designations)
+parentD<-unique(parentD)
+
+diff<-anti_join(AllOther,parentD, by=c("RegNo"="RegNo","Designations"="Designations"))
+
+diff<-diff[diff$Designations!="",]
+
+diff<-unique(diff)
+
+#Adding coutries
+countryName<-read_excel(path="Country List.xlsx", sheet="Tabelle2")
+countryName[complete.cases(countryName), ]
+diff<-left_join(diff,countryName, by=c("Designations"="Country Code"))
+
+#Adding recordID
+# setting reference list
+recordID <- read_excel("WebTMSReferenceList.xlsx")
+recordID$RegNo <- as.character(recordID$RegNo)
+recordID <- recordID[recordID$RegNo != "NA", ]
+recordID$RegNo <- trimws(recordID$RegNo)
+recordID$CC <- trimws(recordID$CC)
+recordID$RegNo <- gsub("^[^0-9]*", "", recordID$RegNo)
+recordID$RegNo <- gsub(",", "", recordID$RegNo)
+
+diff <-
+  left_join(
+    diff,
+    recordID,
+    by = c(
+      "RegNo" = "RegNo",
+      "Designations" = "CC"
+    )
+  )
+
+diff<-unique(diff[,c(1:4)])
+
+
+write_xlsx(diff, path = "Diff.xlsx")
+
+
+
+try(AllOther<-AllOther%>%dplyr::rename(INTENTG=INTENTG.CPCD),silent = TRUE)
+
+#AllOther<-AllOther[,c(1:8,10,9,11,14,21,36,42,12,13,15:20,22:35,37:41,43:ncol(AllOther))]
+
+
+
 #Appending classNo and ClassDesc
 classData<-read_excel(path="WipoData.xlsx")
 classData<-unique(classData%>%select(starts_with("class"),"International Registration Number" ))
@@ -761,8 +989,8 @@ AllOther[is.na(AllOther$`Designated Contracting Party Code`), "Designated Contra
 AllOther[is.na(AllOther$`Goods and Services limited to:`), "Goods and Services limited to:"] <-
   ""
 
-cols <- names(AllOther) == "Designated Contracting Party Code"
-names(AllOther)[cols] <- paste0("Designated Contracting Party Code", seq.int(sum(cols)))
+# cols <- names(AllOther) == "Designated Contracting Party Code"
+# names(AllOther)[cols] <- paste0("Designated Contracting Party Code", seq.int(sum(cols)))
 
 cols <- names(AllOther) == "Goods and services header (French)"
 names(AllOther)[cols] <- paste0("Goods and services header (French)", seq.int(sum(cols)))
@@ -773,8 +1001,11 @@ names(AllOther)[cols] <- paste0("Opposition Period End date", seq.int(sum(cols))
 cols <- names(AllOther) == "Partial Refusal details"
 names(AllOther)[cols] <- paste0("Partial Refusal details", seq.int(sum(cols)))
 
-cols <- names(AllOther) == "Designations under the Agreement"
-names(AllOther)[cols] <- paste0("Designations under the Agreement", seq.int(sum(cols)))
+cols <- names(AllOther) == "International Registration Number details"
+names(AllOther)[cols] <- paste0("International Registration Number details", seq.int(sum(cols)))
+
+# cols <- names(AllOther) == "Designations under the Agreement"
+# names(AllOther)[cols] <- paste0("Designations under the Agreement", seq.int(sum(cols)))
 
 #Adding data from allWipo
 final<-unique(AllOther)
@@ -787,39 +1018,41 @@ final<-unique(left_join(final,classData, by=c("RegNo"="International Registratio
 final<-final%>%mutate_if(is.character, funs(substr(.,1,31999)))
 
 final$Code<-""
-######Preparing the code column
-#Just registration
-tmp<-final%>%select(RegNo,Task,Valid)%>%group_by(RegNo)%>%dplyr::summarise(N=n_distinct(RegNo,Valid),N1=n())%>%
-  dplyr::filter(N==1 & N1==1)%>%select(RegNo)
-tmp<-inner_join(tmp,final, by="RegNo")%>%select(RegNo,Task)%>%
-  filter(Task=="New International Registration")%>%select(RegNo)
+# ######Preparing the code column
+# #Just registration
+# tmp<-final%>%select(RegNo,Task,Valid)%>%group_by(RegNo)%>%dplyr::summarise(N=n_distinct(RegNo,Valid),N1=n())%>%
+#   dplyr::filter(N==1 & N1==1)%>%select(RegNo)
+# tmp<-inner_join(tmp,final, by="RegNo")%>%select(RegNo,Task)%>%
+#   filter(Task=="New International Registration")%>%select(RegNo)
+# 
+# final[!is.na(match(final$RegNo, tmp$RegNo)),"Code"]<-"NewIR only"
+# 
+# #Just transfer Ownership
+# tmp<-final%>%select(RegNo,Task,Valid)%>%group_by(RegNo)%>%dplyr::summarise(N=n_distinct(RegNo,Valid),N1=n())%>%
+#   dplyr::filter(N==1 & N1==1)%>%select(RegNo)
+# tmp<-inner_join(tmp,final, by="RegNo")%>%select(RegNo,Task)%>%
+#   filter(Task=="Partial Transfer of owenership")%>%select(RegNo)
+# 
+# final[!is.na(match(final$RegNo, tmp$RegNo)),"Code"]<-"PartialTransferOwner only"
+# 
+# #NewIR+REN
+# tmp<-final%>%select(RegNo,Task,Valid)%>%group_by(RegNo)%>%dplyr::summarise(N=n_distinct(RegNo,Valid),N1=n())%>%
+#      dplyr::filter(N==1 & N1==2)%>%select(RegNo)
+# tmp<-inner_join(tmp,final, by="RegNo")%>%select(RegNo,Task,Valid)%>%
+#      filter(Valid=="A")%>%select(RegNo)
+# 
+# final[!is.na(match(final$RegNo, tmp$RegNo)),"Code"]<-"NewIR+REN"
+# 
+# #NewIR+REN
+# tmp<-final%>%select(RegNo,Task,Valid)%>%group_by(RegNo)%>%dplyr::summarise(N=n_distinct(RegNo,Valid),N1=n())%>%
+#   dplyr::filter(N==1 & N1==3)%>%select(RegNo)
+# tmp<-inner_join(tmp,final, by="RegNo")%>%select(RegNo,Task,Valid)%>%
+#   filter(Valid=="A")%>%select(RegNo)
+# 
+# final[!is.na(match(final$RegNo, tmp$RegNo)),"Code"]<-"NewIR+REN+REN"
 
-final[!is.na(match(final$RegNo, tmp$RegNo)),"Code"]<-"NewIR only"
+#final<-final[,c(1,2,124,3:(ncol(final)-1))]
 
-#Just transfer Ownership
-tmp<-final%>%select(RegNo,Task,Valid)%>%group_by(RegNo)%>%dplyr::summarise(N=n_distinct(RegNo,Valid),N1=n())%>%
-  dplyr::filter(N==1 & N1==1)%>%select(RegNo)
-tmp<-inner_join(tmp,final, by="RegNo")%>%select(RegNo,Task)%>%
-  filter(Task=="Partial Transfer of owenership")%>%select(RegNo)
-
-final[!is.na(match(final$RegNo, tmp$RegNo)),"Code"]<-"PartialTransferOwner only"
-
-#NewIR+REN
-tmp<-final%>%select(RegNo,Task,Valid)%>%group_by(RegNo)%>%dplyr::summarise(N=n_distinct(RegNo,Valid),N1=n())%>%
-     dplyr::filter(N==1 & N1==2)%>%select(RegNo)
-tmp<-inner_join(tmp,final, by="RegNo")%>%select(RegNo,Task,Valid)%>%
-     filter(Valid=="A")%>%select(RegNo)
-
-final[!is.na(match(final$RegNo, tmp$RegNo)),"Code"]<-"NewIR+REN"
-
-#NewIR+REN
-tmp<-final%>%select(RegNo,Task,Valid)%>%group_by(RegNo)%>%dplyr::summarise(N=n_distinct(RegNo,Valid),N1=n())%>%
-  dplyr::filter(N==1 & N1==3)%>%select(RegNo)
-tmp<-inner_join(tmp,final, by="RegNo")%>%select(RegNo,Task,Valid)%>%
-  filter(Valid=="A")%>%select(RegNo)
-
-final[!is.na(match(final$RegNo, tmp$RegNo)),"Code"]<-"NewIR+REN+REN"
-
-final<-final[,c(1,2,124,3:(ncol(final)-1))]
+final<-final[,c(1:9,11,14,15,16,25,27,30)]
 
 write_xlsx(final, path = "GermanyWipoDATA.xlsx")
